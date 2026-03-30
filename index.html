@@ -2629,10 +2629,39 @@ async function handleMidiFile(file) {
       notes
     });
     hideParseProgress();
+    // 분석 탭으로 전환하여 결과 표시
+    switchTab('analyze');
+    // 성공 메시지
+    showMidiSuccess(title, notes.length);
   } catch(e) {
     hideParseProgress();
     showError('MIDI 파싱 오류: ' + e.message);
   }
+}
+
+function showMidiSuccess(title, count) {
+  // 기존 에러 숨기고 성공 배너 표시
+  hideError();
+  const existing = document.getElementById('midiSuccessBanner');
+  if (existing) existing.remove();
+  const banner = document.createElement('div');
+  banner.id = 'midiSuccessBanner';
+  banner.style.cssText = 'background:rgba(78,203,141,0.12);border:1px solid rgba(78,203,141,0.3);border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;';
+  banner.innerHTML = '<div style="display:flex;align-items:center;gap:10px;">'
+    + '<span style="font-size:20px;">🎵</span>'
+    + '<div><div style="font-size:13px;font-weight:700;color:var(--green)">MIDI 불러오기 완료</div>'
+    + '<div style="font-size:11px;color:var(--text-dim);">' + title + ' · ' + count + '개 음표</div></div></div>'
+    + '<button id="midiPlayBtn" style="background:var(--green);color:#000;border:none;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:900;font-family:inherit;cursor:pointer;">&#9654; 바로 재생</button>';
+  const resultSection = document.getElementById('resultSection');
+  if (resultSection) resultSection.prepend(banner);
+  setTimeout(() => {
+    const btn = document.getElementById('midiPlayBtn');
+    if (btn) btn.onclick = async function() {
+      switchTab('playback');
+      await new Promise(r => setTimeout(r, 150));
+      playAll();
+    };
+  }, 10);
 }
 
 function parseMidi(buf) {
