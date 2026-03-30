@@ -938,7 +938,12 @@ function playTone(noteStr, durSec, vol) {
   const v = (vol && vol > 0 && isFinite(vol)) ? vol : 0.4;
 
   const ctx = getAC();
-  if (ctx.state === 'suspended') { ctx.resume(); }
+  // ctx가 running이 아니면 소리 안 남 — 여기까지 오면 이미 running이어야 함
+  if (ctx.state !== 'running') {
+    ctx.resume();
+    // resume이 비동기라 즉시 적용 안 될 수 있음
+    // 다음 클릭에서는 running 상태로 정상 재생됨
+  }
 
   try {
     const now = ctx.currentTime;
@@ -1230,7 +1235,6 @@ function buildGrid(id, notes, cb) {
     c.className='note-chip' + (entry.isChord?' chord-chip':'');
     c.id=id+'-'+i;
     if(entry.isChord) {
-      // Chord chip: show all note names stacked
       const noteNames = entry.notes.map(n=>{ const {base}=parseNote(n); return base; }).join('+');
       const kr = entry.label || entry.notes.map(n=>{ const {base}=parseNote(n); return KR[base]||base; }).join(' ');
       c.innerHTML='<span class="note-name chord-name">'+noteNames+'</span><span class="note-korean">'+kr+'</span><span class="note-octave">화음</span>';
@@ -1239,7 +1243,15 @@ function buildGrid(id, notes, cb) {
       const kr=entry.label||KR[base]||base;
       c.innerHTML='<span class="note-name">'+base+'</span><span class="note-korean">'+kr+'</span>'+(octave?'<span class="note-octave">Oct'+octave+'</span>':'');
     }
-    c.onclick=()=>cb(i); g.appendChild(c);
+    c.onclick = async () => {
+      // 클릭 제스처 안에서 즉시 AudioContext resume
+      if (!_ctx || _ctx.state === 'closed') {
+        _ctx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (_ctx.state === 'suspended') await _ctx.resume();
+      cb(i);
+    };
+    g.appendChild(c);
   });
 }
 
