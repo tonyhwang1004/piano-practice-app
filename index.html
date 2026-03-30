@@ -831,15 +831,45 @@ async function analyzeSheet() {
   document.getElementById('resultSection').style.display='none';
   document.getElementById('analyzeBtn').disabled=true;
 
-  const sys = `You are an expert music score reader. Analyze the sheet music image and return ONLY valid JSON, nothing else.
+  const sys = `You are a professional music engraver and sight-reading expert. Read the sheet music image with maximum precision and return ONLY valid JSON.
 
-Format:
+STEP 1 - IDENTIFY KEY/TIME SIGNATURE:
+Key signatures: 0=C maj, 1#=G maj, 2#=D maj, 3#=A maj, 4#=E maj, 1b=F maj, 2b=Bb maj, 3b=Eb maj
+ALL notes must apply key signature accidentals automatically unless cancelled by a natural sign.
+
+STEP 2 - TREBLE CLEF NOTE POSITIONS:
+Lines (bottom to top): E4, G4, B4, D5, F5
+Spaces (bottom to top): F4, A4, C5, E5
+Below staff: D4(1st space below), C4(1st ledger line = MIDDLE C), B3, A3(2nd ledger line)
+Above staff: G5(1st space above), A5(1st ledger line above)
+
+STEP 3 - BASS CLEF NOTE POSITIONS:
+Lines (bottom to top): G2, B2, D3, F3, A3
+Spaces (bottom to top): A2, C3, E3, G3
+First ledger line above bass clef = C4 (middle C)
+
+STEP 4 - DURATION VALUES:
+whole=4, dotted-half=3, half=2, dotted-quarter=1.5, quarter=1, dotted-eighth=0.75, eighth=0.5, sixteenth=0.25
+Tied notes: add durations together into one entry.
+
+STEP 5 - OCTAVE PRECISION:
+Middle C = C4. Going UP from B4 the next note is C5 (NOT C4). Going DOWN from C4 is B3.
+Count ledger lines carefully. A note two ledger lines above treble staff = C6.
+
+STEP 6 - ACCURACY RULES:
+- Apply key signature to every note (e.g. in D major, all F and C are automatically F# and C#)
+- Only add explicit accidentals when the score shows a sharp/flat/natural sign BEYOND the key signature
+- Read rhythms carefully: filled noteheads=quarter or shorter, open noteheads=half or whole
+- Flags and beams indicate eighth/sixteenth notes
+- Dots after noteheads add half the note value
+
+OUTPUT FORMAT (JSON only, no other text):
 {
-  "title": "piece title or 알 수 없음",
-  "key": "e.g. D major",
-  "timeSignature": "e.g. 6/8",
-  "tempo": "e.g. 40 BPM",
-  "description": "2-3 sentences in Korean",
+  "title": "title or 알 수 없음",
+  "key": "e.g. A major",
+  "timeSignature": "e.g. 4/4",
+  "tempo": "e.g. 68 BPM",
+  "description": "2-3 sentences in Korean about this piece",
   "notes": [
     {"notes": ["C4"], "duration": 1, "label": "도", "isChord": false},
     {"notes": ["E4","G4","C5"], "duration": 1, "label": "도미솔", "isChord": true},
@@ -847,16 +877,13 @@ Format:
   ]
 }
 
-CRITICAL RULES:
-- Every entry uses "notes" (array), NEVER a single "note" string.
-- Single notes: "notes": ["C4"]  with isChord: false
-- Chords (multiple simultaneous notes): "notes": ["C4","E4","G4"] with isChord: true — list ALL notes of the chord from lowest to highest.
-- Rests: "notes": ["REST"] with isChord: false
-- Note format: C4, D#4, Eb5 (letter + optional sharp/flat + octave digit)
-- duration: quarter=1, eighth=0.5, half=2, whole=4, dotted-quarter=1.5
-- label: Korean solfege name(s) joined with spaces e.g. "도미솔" for chords
-- Maximum 60 beat-positions (a chord counts as ONE position). Focus on right-hand melody + chords.
-- Valid JSON only, no trailing commas.`;
+RULES:
+- notes field is always an array. Single note: ["A4"]. Chord: ["C4","E4","G4"] lowest first. Rest: ["REST"]
+- isChord: true only when multiple notes sound simultaneously
+- Note format: C4 D4 E4 F4 G4 A4 B4 C#4 Db4 Eb4 F#4 Gb4 Ab4 Bb4
+- label in Korean: 도(C) 레(D) 미(E) 파(F) 솔(G) 라(A) 시(B) + # or ♭
+- Maximum 80 note positions. Focus on RIGHT HAND melody.
+- Valid JSON only, no trailing commas.\`;
 
   try {
     const res=await fetch("https://api.anthropic.com/v1/messages",{
@@ -867,7 +894,7 @@ CRITICAL RULES:
         "anthropic-version": "2023-06-01",
         "anthropic-dangerous-direct-browser-access": "true"
       },
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:4000,system:sys,
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:6000,system:sys,
         messages:[{role:"user",content:[
           {type:"image",source:{type:"base64",media_type:uploadedMediaType,data:uploadedImageBase64}},
           {type:"text",text:"악보를 분석해주세요. JSON만 반환해주세요."}
