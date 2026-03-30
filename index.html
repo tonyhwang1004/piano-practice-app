@@ -503,6 +503,12 @@ body::before { content:''; position:fixed; inset:0; background: radial-gradient(
     <button class="tab-btn" onclick="switchTab('practice')">🎹 연습 모드</button>
   </div>
 
+  <!-- ═══ Safari 오디오 안내 ═══ -->
+  <div id="safariBanner" style="display:none;background:rgba(90,180,232,0.1);border:1px solid rgba(90,180,232,0.3);border-radius:14px;padding:12px 16px;margin-bottom:12px;font-size:12px;color:var(--blue);line-height:1.6;">
+    🦁 <strong>Safari 사용 중</strong> — 소리가 안 나오면 화면을 한 번 탭(터치)한 후 재생해 주세요.<br>
+    설정 → Safari → 미디어 자동 재생 → <strong>"모두 허용"</strong> 으로 바꾸면 더 잘 됩니다.
+    <button onclick="document.getElementById('safariBanner').style.display='none'" style="float:right;background:none;border:none;color:var(--blue);cursor:pointer;font-size:14px;">✕</button>
+  </div>
   <!-- ═══ API KEY ═══ -->
   <div class="apikey-card" id="apiKeyCard">
     <div class="ak-icon">🔑</div>
@@ -861,6 +867,11 @@ function toggleKeyVis() {
 
 // Load saved key on startup
 loadApiKey();
+// Safari 감지 시 안내 배너 표시
+if (_isSafari) {
+  const sb = document.getElementById('safariBanner');
+  if (sb) sb.style.display = 'block';
+}
 
 // Practice
 let practiceNotes = [];
@@ -900,23 +911,54 @@ function normBase(b) { return ALIASES[b]||b; }
 // 🔊 오디오 엔진 — 단순 확실한 버전
 // ═══════════════════════════════════════════════
 let _ctx = null;
+const _isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
 function getAC() {
   if (!_ctx || _ctx.state === 'closed') {
-    _ctx = new (window.AudioContext || window.webkitAudioContext)();
+    _ctx = _isSafari
+      ? new webkitAudioContext()
+      : new (window.AudioContext || window.webkitAudioContext)();
   }
   return _ctx;
 }
 
 async function resumeAC() {
   const ctx = getAC();
-  if (ctx.state === 'suspended') await ctx.resume();
+  if (ctx.state === 'suspended') {
+    await ctx.resume();
+  }
   return ctx;
 }
 
-// 클릭마다 resume 시도
-document.addEventListener('click',      function(){ getAC(); if(_ctx.state==='suspended') _ctx.resume(); });
-document.addEventListener('touchstart', function(){ getAC(); if(_ctx.state==='suspended') _ctx.resume(); }, {passive:true});
+// iOS Safari 전용 무음 버퍼 unlock 트릭
+function _safariUnlock(ctx) {
+  const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.connect(ctx.destination);
+  src.start(0);
+  src.disconnect();
+}
+
+// 사용자 제스처 시 즉시 unlock
+async function unlockOnGesture() {
+  try {
+    const ctx = getAC();
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+    }
+    if (_isSafari) {
+      _safariUnlock(ctx);
+    }
+  } catch(e) {}
+}
+
+// Safari: touchend 에서 unlock (touchstart X)
+// Chrome/Firefox: click 에서 unlock
+document.addEventListener('touchend',   unlockOnGesture, { passive: true });
+document.addEventListener('touchstart', unlockOnGesture, { passive: true });
+document.addEventListener('click',      unlockOnGesture);
+document.addEventListener('keydown',    unlockOnGesture);
 
 function playTone(noteStr, durSec, vol) {
   if (!noteStr || noteStr === 'REST') return;
@@ -1211,11 +1253,14 @@ function buildGrid(id, notes, cb) {
       c.innerHTML='<span class="note-name">'+base+'</span><span class="note-korean">'+kr+'</span>'+(octave?'<span class="note-octave">Oct'+octave+'</span>':'');
     }
     c.onclick = async () => {
-      // 클릭 제스처 안에서 즉시 AudioContext resume
+      // 클릭 제스처 안에서 즉시 AudioContext resume (Safari 포함)
       if (!_ctx || _ctx.state === 'closed') {
-        _ctx = new (window.AudioContext || window.webkitAudioContext)();
+        _ctx = _isSafari
+          ? new webkitAudioContext()
+          : new (window.AudioContext || window.webkitAudioContext)();
       }
       if (_ctx.state === 'suspended') await _ctx.resume();
+      if (_isSafari) _safariUnlock(_ctx);
       cb(i);
     };
     g.appendChild(c);
@@ -1245,9 +1290,14 @@ document.getElementById('tempoSlider').oninput=()=>{
 async function playAll() {
   if (!parsedNotes.length) return;
 
-  // 클릭 제스처 안에서 즉시 AudioContext 활성화
-  _ctx = new (window.AudioContext || window.webkitAudioContext)();
-  await _ctx.resume();
+  // 클릭 제스처 안에서 즉시 AudioContext 활성화 (Safari 포함)
+  if (_isSafari) {
+    if (!_ctx || _ctx.state === 'closed') _ctx = new webkitAudioContext();
+  } else {
+    if (!_ctx || _ctx.state === 'closed') _ctx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (_ctx.state === 'suspended') await _ctx.resume();
+  if (_isSafari) _safariUnlock(_ctx);
 
   stopRequested = false; isPlaying = true;
   document.getElementById('playAllBtn').disabled = true;
