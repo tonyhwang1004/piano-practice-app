@@ -268,6 +268,121 @@ body::before { content:''; position:fixed; inset:0; background: radial-gradient(
 }
 .ak-guide a { color: var(--accent); text-decoration: none; }
 
+
+/* ═══ NOTE EDITOR ═══ */
+.edit-modal-overlay {
+  display:none; position:fixed; inset:0; z-index:1000;
+  background:rgba(0,0,0,0.7); align-items:center; justify-content:center;
+  padding:20px;
+}
+.edit-modal-overlay.open { display:flex; }
+.edit-modal {
+  background:var(--surface); border-radius:20px;
+  border:1px solid var(--border);
+  width:100%; max-width:380px;
+  padding:24px; position:relative;
+}
+.edit-modal h3 {
+  font-size:16px; font-weight:700; margin-bottom:18px;
+  color:var(--text);
+}
+.edit-row { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+.edit-label { font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; }
+.edit-select, .edit-input {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:10px; padding:10px 12px;
+  color:var(--text); font-size:14px; font-family:inherit;
+  outline:none; width:100%;
+}
+.edit-select:focus, .edit-input:focus { border-color:var(--accent); }
+.edit-note-grid {
+  display:grid; grid-template-columns:repeat(7,1fr); gap:5px;
+  margin-bottom:6px;
+}
+.edit-note-btn {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:8px; padding:8px 4px;
+  color:var(--text); font-size:12px; font-weight:700;
+  font-family:inherit; cursor:pointer; text-align:center;
+  transition:all 0.15s;
+}
+.edit-note-btn:hover { border-color:var(--accent); color:var(--accent); }
+.edit-note-btn.selected { background:var(--accent); color:#000; border-color:var(--accent); }
+.edit-acc-row { display:flex; gap:6px; margin-bottom:14px; }
+.edit-acc-btn {
+  flex:1; background:var(--surface2); border:1px solid var(--border);
+  border-radius:8px; padding:8px; color:var(--text);
+  font-size:13px; font-weight:700; font-family:inherit;
+  cursor:pointer; text-align:center; transition:all 0.15s;
+}
+.edit-acc-btn:hover { border-color:var(--blue); color:var(--blue); }
+.edit-acc-btn.selected { background:var(--blue); color:#fff; border-color:var(--blue); }
+.edit-oct-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.edit-oct-btn {
+  width:36px; height:36px; border-radius:50%;
+  background:var(--surface2); border:1px solid var(--border);
+  color:var(--text); font-size:18px; font-weight:700;
+  font-family:inherit; cursor:pointer; display:flex;
+  align-items:center; justify-content:center; transition:all 0.15s;
+}
+.edit-oct-btn:hover { border-color:var(--accent); color:var(--accent); }
+.edit-oct-display {
+  font-family:'DM Serif Display',serif; font-size:28px;
+  color:var(--accent); min-width:60px; text-align:center;
+}
+.edit-dur-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px; }
+.edit-dur-btn {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:8px; padding:7px 10px;
+  color:var(--text); font-size:11px; font-weight:700;
+  font-family:inherit; cursor:pointer; transition:all 0.15s;
+}
+.edit-dur-btn:hover { border-color:var(--green); color:var(--green); }
+.edit-dur-btn.selected { background:var(--green); color:#000; border-color:var(--green); }
+.edit-actions { display:flex; gap:8px; margin-top:4px; }
+.edit-save-btn {
+  flex:2; background:var(--accent); color:#000;
+  border:none; border-radius:12px; padding:13px;
+  font-size:14px; font-weight:900; font-family:inherit; cursor:pointer;
+}
+.edit-save-btn:hover { background:#ffd84a; }
+.edit-delete-btn {
+  flex:1; background:rgba(232,90,90,0.12); color:var(--red);
+  border:1px solid rgba(232,90,90,0.3); border-radius:12px; padding:13px;
+  font-size:14px; font-weight:700; font-family:inherit; cursor:pointer;
+}
+.edit-delete-btn:hover { background:rgba(232,90,90,0.22); }
+.edit-cancel-btn {
+  flex:1; background:var(--surface2); color:var(--text-dim);
+  border:1px solid var(--border); border-radius:12px; padding:13px;
+  font-size:14px; font-weight:700; font-family:inherit; cursor:pointer;
+}
+.edit-close-btn {
+  position:absolute; top:16px; right:16px;
+  background:none; border:none; color:var(--text-dim);
+  font-size:20px; cursor:pointer; padding:4px;
+}
+.edit-hint { font-size:10px; color:var(--text-dim); text-align:center; margin-top:-10px; margin-bottom:14px; }
+/* 편집 모드일 때 칩 표시 */
+.note-chip.editable:hover { border-color:var(--accent); }
+.note-chip.editable::after {
+  content:'✏'; font-size:8px; position:absolute;
+  top:-4px; right:-4px; background:var(--accent); color:#000;
+  border-radius:50%; width:14px; height:14px;
+  display:flex; align-items:center; justify-content:center;
+}
+.note-chip { position:relative; }
+.edit-mode-toggle {
+  display:flex; align-items:center; gap:8px;
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:10px; padding:6px 12px; cursor:pointer;
+  font-size:12px; color:var(--text-dim); font-family:inherit;
+  transition:all 0.2s;
+}
+.edit-mode-toggle.active { border-color:var(--accent); color:var(--accent); background:rgba(245,200,66,0.1); }
+.edit-toggle-dot { width:8px; height:8px; border-radius:50%; background:var(--border); }
+.edit-mode-toggle.active .edit-toggle-dot { background:var(--accent); }
+
 /* ═══ MIC INPUT ═══ */
 .mic-section { background:var(--surface); border-radius:18px; border:1px solid var(--border); overflow:hidden; margin-bottom:14px; display:none; }
 .mic-section.visible { display:block; }
@@ -336,6 +451,41 @@ body::before { content:''; position:fixed; inset:0; background: radial-gradient(
 .sheet-scroll-wrap { overflow-x:auto; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
 .sheet-scroll-wrap::-webkit-scrollbar { height:4px; }
 .sheet-scroll-wrap::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+/* ═══ MIDI / MusicXML 업로드 ═══ */
+.file-tabs { display:flex; gap:6px; margin-bottom:12px; }
+.file-tab-btn {
+  flex:1; background:var(--surface); border:1px solid var(--border);
+  color:var(--text-dim); border-radius:10px; padding:9px 6px;
+  font-size:12px; font-weight:700; font-family:inherit; cursor:pointer;
+  transition:all 0.2s; text-align:center;
+}
+.file-tab-btn.active { background:var(--surface2); color:var(--text); border-color:var(--accent); }
+.file-tab-btn:hover:not(.active) { color:var(--text); }
+.upload-panel { display:none; }
+.upload-panel.active { display:block; }
+.midi-upload-zone {
+  background:var(--surface); border:2px dashed var(--border);
+  border-radius:18px; padding:32px 24px; text-align:center;
+  cursor:pointer; transition:all 0.3s; margin-bottom:12px;
+}
+.midi-upload-zone:hover { border-color:var(--green); background:var(--surface2); }
+.midi-upload-zone .mu-icon { font-size:40px; margin-bottom:10px; display:block; }
+.midi-upload-zone h3 { font-size:15px; font-weight:700; margin-bottom:5px; }
+.midi-upload-zone p { color:var(--text-dim); font-size:12px; line-height:1.6; }
+.midi-sources {
+  background:var(--surface2); border-radius:12px; padding:12px 16px;
+  font-size:11px; color:var(--text-dim); line-height:2; margin-bottom:12px;
+  border:1px solid var(--border);
+}
+.midi-sources strong { color:var(--text); display:block; margin-bottom:4px; }
+.midi-sources a { color:var(--accent); text-decoration:none; }
+.parse-progress {
+  display:none; background:var(--surface); border-radius:14px; padding:20px;
+  text-align:center; border:1px solid var(--border); margin-bottom:12px;
+}
+.parse-progress.visible { display:block; }
+.parse-progress p { font-size:13px; color:var(--text-dim); margin-top:8px; }
 </style>
 </head>
 <body>
@@ -372,22 +522,74 @@ body::before { content:''; position:fixed; inset:0; background: radial-gradient(
 
   <!-- ═══ TAB: ANALYZE ═══ -->
   <div class="tab-content active" id="tab-analyze">
-    <div class="upload-zone" id="uploadZone">
-      <span class="upload-icon">📷</span>
-      <h3>악보 사진 업로드</h3>
-      <p>클릭하거나 드래그해서 악보 이미지를 올려주세요<br>JPG · PNG · WEBP 지원</p>
-      <input type="file" id="fileInput" accept="image/*" capture="environment">
+
+    <!-- 파일 형식 탭 -->
+    <div class="file-tabs">
+      <button class="file-tab-btn active" onclick="switchFileTab('image')" id="ftImage">📷 악보 사진</button>
+      <button class="file-tab-btn" onclick="switchFileTab('midi')"  id="ftMidi">🎹 MIDI 파일</button>
+      <button class="file-tab-btn" onclick="switchFileTab('xml')"   id="ftXml">🎼 MusicXML</button>
     </div>
 
-    <div class="preview-section" id="previewSection">
-      <div class="preview-header">
-        <span>📄 업로드된 악보</span>
-        <button onclick="resetAll()">✕ 초기화</button>
+    <!-- 패널: 이미지 -->
+    <div class="upload-panel active" id="panelImage">
+      <div class="upload-zone" id="uploadZone">
+        <span class="upload-icon">📷</span>
+        <h3>악보 사진 업로드</h3>
+        <p>클릭하거나 드래그해서 악보 이미지를 올려주세요<br>JPG · PNG · WEBP 지원</p>
+        <input type="file" id="fileInput" accept="image/*" capture="environment">
       </div>
-      <img id="previewImg" src="" alt="악보 미리보기">
+      <div class="preview-section" id="previewSection">
+        <div class="preview-header">
+          <span>📄 업로드된 악보</span>
+          <button onclick="resetAll()">✕ 초기화</button>
+        </div>
+        <img id="previewImg" src="" alt="악보 미리보기">
+      </div>
+      <button class="btn-primary" id="analyzeBtn" disabled onclick="analyzeSheet()">🔍 AI로 악보 분석하기</button>
     </div>
 
-    <button class="btn-primary" id="analyzeBtn" disabled onclick="analyzeSheet()">🔍 AI로 악보 분석하기</button>
+    <!-- 패널: MIDI -->
+    <div class="upload-panel" id="panelMidi">
+      <div class="midi-upload-zone" id="midiZone" onclick="document.getElementById('midiInput').click()">
+        <span class="mu-icon">🎹</span>
+        <h3>MIDI 파일 업로드</h3>
+        <p>.mid · .midi 파일을 클릭하거나 드래그해서 올려주세요<br>인터넷에서 받은 MIDI 파일을 바로 사용 가능</p>
+        <input type="file" id="midiInput" accept=".mid,.midi" style="display:none" onchange="handleMidiFile(this.files[0])">
+      </div>
+      <div class="midi-sources">
+        <strong>🌐 무료 MIDI 파일 다운로드 사이트</strong>
+        <a href="https://www.midiworld.com" target="_blank">midiworld.com</a> — 팝/클래식/영화음악 &nbsp;|&nbsp;
+        <a href="https://freemidi.org" target="_blank">freemidi.org</a> — 28,000개 이상 &nbsp;|&nbsp;
+        <a href="https://www.kunstderfuge.com" target="_blank">kunstderfuge.com</a> — 클래식 19,300곡 &nbsp;|&nbsp;
+        <a href="https://www.mfiles.co.uk/midi-files.htm" target="_blank">mfiles.co.uk</a> — 클래식 무료
+      </div>
+    </div>
+
+    <!-- 패널: MusicXML -->
+    <div class="upload-panel" id="panelXml">
+      <div class="midi-upload-zone" id="xmlZone" onclick="document.getElementById('xmlInput').click()">
+        <span class="mu-icon">🎼</span>
+        <h3>MusicXML 파일 업로드</h3>
+        <p>.xml · .musicxml · .mxl 파일을 클릭하거나 드래그해서 올려주세요<br>MuseScore / Sibelius / Finale에서 내보낸 파일 사용 가능</p>
+        <input type="file" id="xmlInput" accept=".xml,.musicxml,.mxl" style="display:none" onchange="handleXmlFile(this.files[0])">
+      </div>
+      <div class="midi-sources">
+        <strong>🌐 무료 MusicXML 파일 다운로드 사이트</strong>
+        <a href="https://musescore.com/sheetmusic?sort=viewed&instruments=Piano" target="_blank">musescore.com</a> — 피아노 악보 무료 다운 &nbsp;|&nbsp;
+        <a href="https://imslp.org" target="_blank">IMSLP</a> — 클래식 공도메인 210,000곡 &nbsp;|&nbsp;
+        <a href="https://github.com/musetrainer/library" target="_blank">OpenScore GitHub</a> — 완전 무료 공도메인
+      </div>
+    </div>
+
+    <!-- 파싱 진행 -->
+    <div class="parse-progress" id="parseProgress">
+      <div class="loading-animation">
+        <div class="loading-bar"></div><div class="loading-bar"></div>
+        <div class="loading-bar"></div><div class="loading-bar"></div>
+        <div class="loading-bar"></div>
+      </div>
+      <p id="parseProgressText">파일 파싱 중...</p>
+    </div>
     <div class="error-card" id="errorCard"></div>
 
     <div class="loading-section" id="loadingSection">
@@ -424,8 +626,23 @@ body::before { content:''; position:fixed; inset:0; background: radial-gradient(
       </div>
 
       <div class="card">
-        <div class="card-header"><div class="card-icon">🎵</div><div class="card-title">인식된 음표 — 클릭하면 소리 재생</div></div>
+        <div class="card-header">
+          <div class="card-icon">🎵</div>
+          <div class="card-title">인식된 음표</div>
+          <button class="edit-mode-toggle" id="editModeToggle" onclick="toggleEditMode()">
+            <div class="edit-toggle-dot"></div>
+            <span id="editModeLabel">편집 모드</span>
+          </button>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);padding:6px 18px 0;display:none;" id="editHint">
+          ✏️ 편집 모드 — 음표를 <strong style="color:var(--accent)">더블클릭</strong>하면 수정, 오른쪽 끝 <strong style="color:var(--green)">＋</strong>로 추가
+        </div>
         <div class="notes-grid" id="notesGrid"></div>
+        <div style="padding:0 14px 14px;" id="addNoteRow" style="display:none">
+          <button onclick="addNoteAfter(-1)" style="background:rgba(78,203,141,0.1);border:1px solid rgba(78,203,141,0.3);color:var(--green);border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;display:none;" id="addNoteBtn">
+            ＋ 음표 추가
+          </button>
+        </div>
       </div>
       <button class="btn-practice" onclick="startPractice()">🎹 연습 모드 시작하기</button>
     </div>
@@ -2353,10 +2570,676 @@ window.addEventListener('load', () => {
 
 
 
+
+// ═══════════════════════════════════════════════════════════
+// 📁 파일 형식 탭 전환
+// ═══════════════════════════════════════════════════════════
+function switchFileTab(type) {
+  ['image','midi','xml'].forEach(t => {
+    document.getElementById('panel'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===type);
+    document.getElementById('ft'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===type);
+  });
+}
+
+// 드래그앤드롭 — MIDI
+const mz = document.getElementById('midiZone');
+if(mz){
+  mz.ondragover = e => { e.preventDefault(); mz.style.borderColor='var(--green)'; };
+  mz.ondragleave = () => { mz.style.borderColor=''; };
+  mz.ondrop = e => { e.preventDefault(); mz.style.borderColor='';
+    if(e.dataTransfer.files[0]) handleMidiFile(e.dataTransfer.files[0]); };
+}
+// 드래그앤드롭 — XML
+const xz = document.getElementById('xmlZone');
+if(xz){
+  xz.ondragover = e => { e.preventDefault(); xz.style.borderColor='var(--accent)'; };
+  xz.ondragleave = () => { xz.style.borderColor=''; };
+  xz.ondrop = e => { e.preventDefault(); xz.style.borderColor='';
+    if(e.dataTransfer.files[0]) handleXmlFile(e.dataTransfer.files[0]); };
+}
+
+// ═══════════════════════════════════════════════════════════
+// 🎹 MIDI 파서
+// MIDI 바이너리 → parsedNotes 변환
+// 표준 MIDI 파일 포맷 (SMF) 직접 파싱
+// ═══════════════════════════════════════════════════════════
+async function handleMidiFile(file) {
+  if (!file) return;
+  showParseProgress('MIDI 파일 파싱 중... 🎹');
+  try {
+    const buf = await file.arrayBuffer();
+    const notes = parseMidi(buf);
+    if (!notes.length) throw new Error('음표를 찾을 수 없습니다');
+    const title = file.name.replace(/\.[^.]+$/, '');
+    displayResults({
+      title, key: '분석됨', timeSignature: '4/4', tempo: '120 BPM',
+      description: 'MIDI 파일 ' + file.name + ' 에서 불러온 악보입니다. 총 ' + notes.length + '개 음표.',
+      notes
+    });
+    hideParseProgress();
+  } catch(e) {
+    hideParseProgress();
+    showError('MIDI 파싱 오류: ' + e.message);
+  }
+}
+
+function parseMidi(buf) {
+  const data = new Uint8Array(buf);
+  let pos = 0;
+
+  function read4() { return (data[pos++]<<24)|(data[pos++]<<16)|(data[pos++]<<8)|data[pos++]; }
+  function read2() { return (data[pos++]<<8)|data[pos++]; }
+  function read1() { return data[pos++]; }
+  function readVarLen() {
+    let val=0, b;
+    do { b=read1(); val=(val<<7)|(b&0x7f); } while(b&0x80);
+    return val;
+  }
+  function skip(n) { pos+=n; }
+
+  // MIDI 헤더
+  if (String.fromCharCode(...data.slice(0,4)) !== 'MThd') throw new Error('MIDI 헤더 없음');
+  skip(4); // 'MThd'
+  skip(4); // chunk size (=6)
+  const format   = read2();
+  const numTracks = read2();
+  const division  = read2(); // ticks per beat
+
+  const MIDI_NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const KR_MAP = {'C':'도','D':'레','E':'미','F':'파','G':'솔','A':'라','B':'시',
+    'C#':'도#','D#':'레#','F#':'파#','G#':'솔#','A#':'라#'};
+
+  function midiNoteToName(n) {
+    const oct = Math.floor(n/12)-1;
+    const base = MIDI_NOTES[n%12];
+    return base + oct;
+  }
+
+  // 모든 트랙의 NoteOn 이벤트 수집
+  const allEvents = []; // {tick, note, velocity, type}
+  let trackStart = pos;
+
+  for (let t=0; t<numTracks; t++) {
+    // 트랙 헤더 찾기
+    while (pos < data.length-4) {
+      const tag = String.fromCharCode(...data.slice(pos,pos+4));
+      if (tag === 'MTrk') break;
+      pos++;
+    }
+    if (pos >= data.length-4) break;
+    skip(4); // 'MTrk'
+    const trackLen = read4();
+    const trackEnd = pos + trackLen;
+    let tick = 0;
+    let runningStatus = 0;
+
+    while (pos < trackEnd) {
+      const dt = readVarLen();
+      tick += dt;
+
+      let status = data[pos];
+      if (status & 0x80) { runningStatus = status; pos++; }
+      else                { status = runningStatus; }
+
+      const type    = status & 0xF0;
+      const channel = status & 0x0F;
+
+      if (type === 0x90) { // NoteOn
+        const note = read1(), vel = read1();
+        if (vel > 0) allEvents.push({tick, note, vel, type:'on', channel});
+        else         allEvents.push({tick, note, vel, type:'off', channel});
+      } else if (type === 0x80) { // NoteOff
+        const note = read1(); read1();
+        allEvents.push({tick, note, vel:0, type:'off', channel});
+      } else if (type === 0xFF) { // Meta
+        const metaType = read1();
+        const metaLen  = readVarLen();
+        skip(metaLen);
+      } else if (type === 0xF0 || status === 0xF7) { // SysEx
+        const len = readVarLen(); skip(len);
+      } else if (type === 0xC0 || type === 0xD0) { read1(); }
+      else if (type === 0xA0 || type === 0xB0 || type === 0xE0) { read1(); read1(); }
+      else { pos++; } // 알 수 없는 이벤트
+    }
+    pos = trackEnd;
+  }
+
+  if (!allEvents.length) throw new Error('노트 이벤트 없음');
+  allEvents.sort((a,b) => a.tick - b.tick);
+
+  // NoteOn/Off 쌍으로 duration 계산
+  const noteList = [];
+  const active   = {}; // note → {tick, vel}
+
+  allEvents.forEach(ev => {
+    const key = ev.channel+'_'+ev.note;
+    if (ev.type === 'on') {
+      active[key] = {tick: ev.tick, vel: ev.vel};
+    } else if (ev.type === 'off' && active[key]) {
+      const durTicks = ev.tick - active[key].tick;
+      noteList.push({ tick: active[key].tick, note: ev.note, durTicks, vel: active[key].vel });
+      delete active[key];
+    }
+  });
+
+  if (!noteList.length) throw new Error('완성된 노트 없음');
+  noteList.sort((a,b) => a.tick - b.tick);
+
+  // tick → beat duration 변환 (division = ticks per quarter note)
+  const TPQ = division > 0 ? division : 480;
+
+  // 화음 그룹핑 (시작 tick이 같거나 10tick 이내)
+  const CHORD_THRESH = Math.max(10, TPQ * 0.05);
+  const groups = [];
+  let grp = [noteList[0]];
+
+  for (let i=1; i<noteList.length; i++) {
+    if (noteList[i].tick - grp[0].tick <= CHORD_THRESH) {
+      grp.push(noteList[i]);
+    } else {
+      groups.push(grp);
+      grp = [noteList[i]];
+    }
+  }
+  groups.push(grp);
+
+  // parsedNotes 형식으로 변환
+  const result = [];
+  const DURATION_SNAP = [
+    [4,   'whole'],   [3,   'dotted-half'], [2,   'half'],
+    [1.5, 'dotted-q'],[1,   'quarter'],     [0.75,'dotted-e'],
+    [0.5, 'eighth'],  [0.25,'sixteenth'],   [0.125,'32nd']
+  ];
+
+  function snapDur(beats) {
+    let best=0.25, bestDiff=Infinity;
+    for(const [d] of DURATION_SNAP) {
+      const diff = Math.abs(beats-d);
+      if(diff<bestDiff){ bestDiff=diff; best=d; }
+    }
+    return best;
+  }
+
+  // 최대 80개 음표 (트레블 파트 우선 — 높은 음)
+  const filtered = groups
+    .map(g => ({ grp: g, minNote: Math.min(...g.map(n=>n.note)) }))
+    .filter(({grp}) => grp.some(n => n.note >= 48)) // C3 이상
+    .slice(0, 80);
+
+  for(const {grp} of filtered) {
+    const avgDurBeats = (grp.reduce((s,n)=>s+n.durTicks,0)/grp.length) / TPQ;
+    const duration    = snapDur(avgDurBeats);
+    const noteNames   = grp
+      .sort((a,b) => a.note-b.note)
+      .map(n => midiNoteToName(n.note));
+    const isChord     = noteNames.length > 1;
+    const base0       = noteNames[0].replace(/[0-9]/g,'');
+    const label       = isChord
+      ? noteNames.map(n=>KR_MAP[n.replace(/[0-9]/g,'')] || n.replace(/[0-9]/g,'')).join('')
+      : (KR_MAP[base0] || base0);
+
+    result.push({ notes: noteNames, duration, label, isChord });
+  }
+
+  return result;
+}
+
+// ═══════════════════════════════════════════════════════════
+// 🎼 MusicXML 파서
+// .xml / .musicxml / .mxl (compressed) 지원
+// ═══════════════════════════════════════════════════════════
+async function handleXmlFile(file) {
+  if (!file) return;
+  showParseProgress('MusicXML 파일 파싱 중... 🎼');
+  try {
+    let xmlText;
+    if (file.name.endsWith('.mxl')) {
+      // Compressed MusicXML — ZIP 압축 해제 필요
+      // JSZip 없이 간단히 처리: ArrayBuffer에서 XML 추출
+      const buf = await file.arrayBuffer();
+      xmlText = await decompressMxl(buf);
+    } else {
+      xmlText = await file.text();
+    }
+
+    const notes = parseMusicXml(xmlText);
+    if (!notes.length) throw new Error('음표를 찾을 수 없습니다');
+
+    // 메타데이터 추출
+    const parser = new DOMParser();
+    const doc    = parser.parseFromString(xmlText, 'text/xml');
+    const title  = doc.querySelector('movement-title,work-title,credit-words')?.textContent?.trim()
+                || file.name.replace(/\.[^.]+$/, '');
+    const ks     = doc.querySelector('key fifths');
+    const beats  = doc.querySelector('beats')?.textContent;
+    const btype  = doc.querySelector('beat-type')?.textContent;
+    const tempo  = doc.querySelector('sound[tempo]')?.getAttribute('tempo')
+                || doc.querySelector('per-minute')?.textContent;
+
+    const KEY_NAMES = {'-7':'Cb maj','-6':'Gb maj','-5':'Db maj','-4':'Ab maj',
+      '-3':'Eb maj','-2':'Bb maj','-1':'F maj','0':'C maj',
+      '1':'G maj','2':'D maj','3':'A maj','4':'E maj','5':'B maj','6':'F# maj','7':'C# maj'};
+    const keyStr = ks ? (KEY_NAMES[ks.textContent] || ks.textContent+' (fifths)') : '분석됨';
+    const tsStr  = (beats && btype) ? beats+'/'+btype : '4/4';
+    const tempoStr = tempo ? Math.round(parseFloat(tempo))+' BPM' : '120 BPM';
+
+    displayResults({
+      title, key: keyStr, timeSignature: tsStr, tempo: tempoStr,
+      description: 'MusicXML 파일 '+file.name+' 에서 불러온 악보입니다. 총 '+notes.length+'개 음표.',
+      notes
+    });
+    hideParseProgress();
+  } catch(e) {
+    hideParseProgress();
+    showError('MusicXML 파싱 오류: ' + e.message);
+  }
+}
+
+function parseMusicXml(xmlText) {
+  const parser = new DOMParser();
+  const doc    = parser.parseFromString(xmlText, 'text/xml');
+  if (doc.querySelector('parsererror')) throw new Error('XML 파싱 실패');
+
+  const KR_MAP = {'C':'도','D':'레','E':'미','F':'파','G':'솔','A':'라','B':'시',
+    'C#':'도#','D#':'레#','F#':'파#','G#':'솔#','A#':'라#',
+    'Cb':'도♭','Db':'도♭','Eb':'레♭','Fb':'미♭','Gb':'파♭','Ab':'솔♭','Bb':'라♭'};
+
+  // divisions (기본 박자 단위)
+  const divEl   = doc.querySelector('divisions');
+  const DIVS    = divEl ? parseInt(divEl.textContent) : 1;
+
+  const result  = [];
+  const measures = doc.querySelectorAll('measure');
+  // 같은 onset(동시)인 음들 → 화음으로 묶기
+  let currentChord = [];
+  let lastOnset    = -1;
+
+  function flushChord() {
+    if (!currentChord.length) return;
+    const isChord = currentChord.length > 1;
+    const noteNames = currentChord.map(n => n.name);
+    const dur       = currentChord[0].duration;
+    const base0     = noteNames[0].replace(/[0-9]/g,'').replace(/[#b]/g,'');
+    const label     = isChord
+      ? noteNames.map(n => { const b=n.replace(/[0-9]/g,''); return KR_MAP[b]||b; }).join('')
+      : (KR_MAP[noteNames[0].replace(/[0-9]/g,'')] || noteNames[0].replace(/[0-9]/g,''));
+    result.push({ notes: noteNames, duration: dur, label, isChord });
+    currentChord = [];
+  }
+
+  let onset = 0;
+  measures.forEach(measure => {
+    let pos = 0;
+    const noteEls = measure.querySelectorAll('note');
+    noteEls.forEach(noteEl => {
+      // Rest 건너뜀 (쉼표 포함하려면 아래 주석 해제)
+      if (noteEl.querySelector('rest')) {
+        if (currentChord.length) flushChord();
+        // 쉼표 추가
+        const durDivs = parseInt(noteEl.querySelector('duration')?.textContent || '1');
+        const durBeats = durDivs / DIVS;
+        result.push({ notes:['REST'], duration: snapDuration(durBeats), label:'쉼표', isChord:false });
+        return;
+      }
+
+      const isChordEl = !!noteEl.querySelector('chord');
+      const stepEl    = noteEl.querySelector('step');
+      const octEl     = noteEl.querySelector('octave');
+      const alterEl   = noteEl.querySelector('alter');
+      const durDivs   = parseInt(noteEl.querySelector('duration')?.textContent || '1');
+
+      if (!stepEl || !octEl) return;
+
+      const step  = stepEl.textContent;
+      const oct   = parseInt(octEl.textContent);
+      const alter = alterEl ? parseFloat(alterEl.textContent) : 0;
+      const acc   = alter === 1 ? '#' : alter === -1 ? 'b' : '';
+      const name  = step + acc + oct;
+      const durBeats = durDivs / DIVS;
+      const duration = snapDuration(durBeats);
+
+      if (isChordEl) {
+        // 같은 화음에 추가
+        currentChord.push({ name, duration });
+      } else {
+        flushChord();
+        currentChord = [{ name, duration }];
+      }
+    });
+    flushChord();
+  });
+  flushChord();
+
+  return result.slice(0, 80);
+}
+
+function snapDuration(beats) {
+  const snaps = [4, 3, 2, 1.5, 1, 0.75, 0.5, 0.25, 0.125];
+  return snaps.reduce((prev, curr) =>
+    Math.abs(curr - beats) < Math.abs(prev - beats) ? curr : prev
+  );
+}
+
+// MXL (압축 MusicXML) 해제
+async function decompressMxl(buf) {
+  // ZIP 파일에서 XML 내용 추출 (간단한 구현)
+  // MXL은 ZIP이므로 파일 목록에서 .xml 파일 찾기
+  try {
+    // DecompressionStream API 사용 (Chrome 80+)
+    // 대안: 텍스트로 직접 검색
+    const bytes = new Uint8Array(buf);
+    // ZIP local file header: PK\x03\x04
+    let xmlContent = '';
+    for (let i=0; i<bytes.length-4; i++) {
+      if (bytes[i]===0x50&&bytes[i+1]===0x4B&&bytes[i+2]===0x03&&bytes[i+3]===0x04) {
+        // 파일명 길이
+        const fnLen  = bytes[i+26]|(bytes[i+27]<<8);
+        const extLen = bytes[i+28]|(bytes[i+29]<<8);
+        const fnStart = i + 30;
+        const fn = String.fromCharCode(...bytes.slice(fnStart, fnStart+fnLen));
+        const dataStart = fnStart + fnLen + extLen;
+        if (fn.endsWith('.xml') && !fn.includes('META-INF')) {
+          // Deflate 압축 해제 시도
+          const compMethod = bytes[i+8]|(bytes[i+9]<<8);
+          const compSize   = bytes[i+18]|(bytes[i+19]<<8)|(bytes[i+20]<<16)|(bytes[i+21]<<24);
+          if (compMethod === 0) {
+            // 비압축
+            xmlContent = new TextDecoder().decode(bytes.slice(dataStart, dataStart+compSize));
+          } else if (compMethod === 8 && typeof DecompressionStream !== 'undefined') {
+            // Deflate
+            const compressed = bytes.slice(dataStart, dataStart+compSize);
+            const ds = new DecompressionStream('deflate-raw');
+            const writer = ds.writable.getWriter();
+            writer.write(compressed); writer.close();
+            const chunks = [];
+            const reader = ds.readable.getReader();
+            while(true) {
+              const {done, value} = await reader.read();
+              if(done) break;
+              chunks.push(value);
+            }
+            const total = chunks.reduce((s,c)=>s+c.length,0);
+            const merged = new Uint8Array(total);
+            let off=0; chunks.forEach(c=>{merged.set(c,off);off+=c.length;});
+            xmlContent = new TextDecoder().decode(merged);
+          }
+          if (xmlContent) break;
+        }
+      }
+    }
+    if (!xmlContent) throw new Error('.mxl 파일 압축 해제 실패. .xml 파일로 변환 후 시도해주세요.');
+    return xmlContent;
+  } catch(e) {
+    throw new Error('MXL 압축 해제 실패: ' + e.message);
+  }
+}
+
+// ── 파싱 진행 표시 ──
+function showParseProgress(msg) {
+  const el = document.getElementById('parseProgress');
+  const txt = document.getElementById('parseProgressText');
+  if(el) el.classList.add('visible');
+  if(txt) txt.textContent = msg;
+}
+function hideParseProgress() {
+  const el = document.getElementById('parseProgress');
+  if(el) el.classList.remove('visible');
+}
+
+
+
+// ═══════════════════════════════════════════════════════════
+// ✏️ 음표 편집 엔진
+// ═══════════════════════════════════════════════════════════
+
+let editMode       = false;   // 편집 모드 on/off
+let editIndex      = -1;      // 현재 편집 중인 음표 인덱스
+let editNote       = 'C';     // 선택된 음이름
+let editAcc        = '';      // 선택된 임시표
+let editOct        = 4;       // 선택된 옥타브
+let editDur        = 1;       // 선택된 박자
+let editLongTimer  = null;    // 길게 누르기 타이머
+
+// ── 편집 모드 토글 ──
+function toggleEditMode() {
+  editMode = !editMode;
+  const toggle = document.getElementById('editModeToggle');
+  const label  = document.getElementById('editModeLabel');
+  const hint   = document.getElementById('editHint');
+  const addBtn = document.getElementById('addNoteBtn');
+  toggle.classList.toggle('active', editMode);
+  label.textContent  = editMode ? '편집 중' : '편집 모드';
+  hint.style.display = editMode ? 'block' : 'none';
+  if (addBtn) addBtn.style.display = editMode ? 'inline-flex' : 'none';
+  // 칩 재렌더 (편집 가능 표시 추가/제거)
+  buildGrid('notesGrid', parsedNotes, i => {
+    if (!editMode) { playEntry(parsedNotes[i]); hiliteChip('notesGrid', i); }
+    else           { openEditModal(i); }
+  });
+}
+
+// ── 모달 열기 ──
+function openEditModal(idx) {
+  if (idx < 0 || idx >= parsedNotes.length) return;
+  editIndex = idx;
+  const entry = parsedNotes[idx];
+
+  // 현재 음표 파싱 (첫 번째 음 기준)
+  const noteStr = entry.notes[0];
+  if (noteStr === 'REST') {
+    editNote = 'REST'; editAcc = ''; editOct = 4;
+  } else {
+    const m = noteStr.match(/^([A-G])([#b]?)(\d)$/);
+    if (m) { editNote = m[1]; editAcc = m[2]; editOct = parseInt(m[3]); }
+    else   { editNote = 'C';  editAcc = '';   editOct = 4; }
+  }
+  editDur = entry.duration || 1;
+
+  // 모달 타이틀
+  document.getElementById('editModalTitle').textContent =
+    (idx + 1) + '번째 음표 편집';
+
+  updateEditUI();
+  document.getElementById('editModalOverlay').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('editModalOverlay').classList.remove('open');
+  editIndex = -1;
+}
+
+// ── UI 업데이트 ──
+function updateEditUI() {
+  // 음이름 버튼
+  document.querySelectorAll('.edit-note-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.note === editNote);
+  });
+  // 임시표 버튼
+  document.querySelectorAll('.edit-acc-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.acc === editAcc);
+  });
+  // 옥타브
+  document.getElementById('editOctDisplay').textContent = editOct;
+  // 박자
+  document.querySelectorAll('.edit-dur-btn').forEach(btn => {
+    btn.classList.toggle('selected', parseFloat(btn.dataset.dur) === editDur);
+  });
+}
+
+function selectEditNote(n)    { editNote = n; updateEditUI(); }
+function selectEditAcc(a)     { editAcc  = a; updateEditUI(); }
+function selectEditDur(d)     { editDur  = d; updateEditUI(); }
+function changeEditOct(delta) {
+  editOct = Math.min(7, Math.max(1, editOct + delta));
+  updateEditUI();
+}
+
+// ── 미리 듣기 ──
+function previewEditNote() {
+  if (editNote === 'REST') return;
+  const noteStr = editNote + editAcc + editOct;
+  playTone(noteStr, 0.8, 0.5);
+}
+
+// ── 저장 ──
+function saveEditNote() {
+  if (editIndex < 0) return;
+  const noteStr = editNote === 'REST' ? 'REST' : (editNote + editAcc + editOct);
+  const kr      = KR[editNote + editAcc] || KR[editNote] || editNote;
+
+  parsedNotes[editIndex] = {
+    notes:    [noteStr],
+    duration: editDur,
+    label:    noteStr === 'REST' ? '쉼표' : kr,
+    isChord:  false,
+  };
+
+  // 그리드 & 악보 갱신
+  refreshAfterEdit();
+  closeEditModal();
+}
+
+// ── 삭제 ──
+function deleteEditNote() {
+  if (editIndex < 0) return;
+  parsedNotes.splice(editIndex, 1);
+  refreshAfterEdit();
+  closeEditModal();
+}
+
+// ── 뒤에 음표 추가 ──
+function addNoteAfter(afterIdx) {
+  const newEntry = { notes:['C4'], duration:1, label:'도', isChord:false };
+  if (afterIdx < 0) {
+    parsedNotes.push(newEntry);
+    editIndex = parsedNotes.length - 1;
+  } else {
+    parsedNotes.splice(afterIdx + 1, 0, newEntry);
+    editIndex = afterIdx + 1;
+  }
+  refreshAfterEdit();
+  openEditModal(editIndex);
+}
+
+// ── 편집 후 전체 갱신 ──
+function refreshAfterEdit() {
+  // notesGrid 재빌드
+  buildGrid('notesGrid', parsedNotes, i => {
+    if (!editMode) { playEntry(parsedNotes[i]); hiliteChip('notesGrid', i); }
+    else           { openEditModal(i); }
+  });
+  buildGrid('notesGrid2', parsedNotes, i => {
+    playEntry(parsedNotes[i]); hiliteChip('notesGrid2', i);
+  });
+  // 악보 캔버스 재렌더
+  sheetHighlight = -1;
+  renderSheet();
+  // 음표 수 배지 갱신
+  const badge = document.querySelector('#infoRow .info-badge:last-child');
+  if (badge) badge.innerHTML = '🎵 음표: <strong>' + parsedNotes.length + '개</strong>';
+}
+
+// ── 더블클릭/길게 누르기로 편집 모달 열기 ──
+// buildGrid를 오버라이드해서 편집 모드 이벤트 추가
+const _origBuildGrid = buildGrid;
+buildGrid = function(id, notes, cb) {
+  _origBuildGrid(id, notes, cb);
+  if (id !== 'notesGrid') return;
+  // 각 칩에 더블클릭 이벤트 추가
+  notes.forEach((entry, i) => {
+    const chip = document.getElementById(id + '-' + i);
+    if (!chip) return;
+    // 더블클릭
+    chip.ondblclick = (e) => {
+      e.stopPropagation();
+      openEditModal(i);
+    };
+    // 길게 누르기 (모바일)
+    chip.addEventListener('touchstart', (e) => {
+      editLongTimer = setTimeout(() => { openEditModal(i); }, 600);
+    }, { passive: true });
+    chip.addEventListener('touchend',   () => clearTimeout(editLongTimer));
+    chip.addEventListener('touchmove',  () => clearTimeout(editLongTimer));
+  });
+};
+
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 function showError(msg){const el=document.getElementById('errorCard');el.textContent='⚠️ '+msg;el.classList.add('visible');}
 function hideError(){document.getElementById('errorCard').classList.remove('visible');}
 
 </script>
+
+<!-- ═══ NOTE EDITOR MODAL ═══ -->
+<div class="edit-modal-overlay" id="editModalOverlay" onclick="if(event.target===this)closeEditModal()">
+  <div class="edit-modal">
+    <button class="edit-close-btn" onclick="closeEditModal()">✕</button>
+    <h3 id="editModalTitle">음표 편집</h3>
+
+    <!-- 음이름 선택 -->
+    <div class="edit-row">
+      <div class="edit-label">음이름</div>
+      <div class="edit-note-grid" id="editNoteGrid">
+        <button class="edit-note-btn" data-note="C" onclick="selectEditNote('C')">C<br><span style="font-size:9px;color:inherit">도</span></button>
+        <button class="edit-note-btn" data-note="D" onclick="selectEditNote('D')">D<br><span style="font-size:9px;color:inherit">레</span></button>
+        <button class="edit-note-btn" data-note="E" onclick="selectEditNote('E')">E<br><span style="font-size:9px;color:inherit">미</span></button>
+        <button class="edit-note-btn" data-note="F" onclick="selectEditNote('F')">F<br><span style="font-size:9px;color:inherit">파</span></button>
+        <button class="edit-note-btn" data-note="G" onclick="selectEditNote('G')">G<br><span style="font-size:9px;color:inherit">솔</span></button>
+        <button class="edit-note-btn" data-note="A" onclick="selectEditNote('A')">A<br><span style="font-size:9px;color:inherit">라</span></button>
+        <button class="edit-note-btn" data-note="B" onclick="selectEditNote('B')">B<br><span style="font-size:9px;color:inherit">시</span></button>
+      </div>
+    </div>
+
+    <!-- 임시표 -->
+    <div class="edit-row">
+      <div class="edit-label">임시표</div>
+      <div class="edit-acc-row">
+        <button class="edit-acc-btn" data-acc="" onclick="selectEditAcc('')">♮ 없음</button>
+        <button class="edit-acc-btn" data-acc="#" onclick="selectEditAcc('#')">♯ 올림</button>
+        <button class="edit-acc-btn" data-acc="b" onclick="selectEditAcc('b')">♭ 내림</button>
+      </div>
+    </div>
+
+    <!-- 옥타브 -->
+    <div class="edit-row">
+      <div class="edit-label">옥타브</div>
+      <div class="edit-oct-row">
+        <button class="edit-oct-btn" onclick="changeEditOct(-1)">−</button>
+        <div class="edit-oct-display" id="editOctDisplay">4</div>
+        <button class="edit-oct-btn" onclick="changeEditOct(1)">＋</button>
+        <span style="font-size:11px;color:var(--text-dim)">4 = 가운데 C 옥타브</span>
+      </div>
+    </div>
+
+    <!-- 박자 -->
+    <div class="edit-row">
+      <div class="edit-label">박자 (음표 길이)</div>
+      <div class="edit-dur-row">
+        <button class="edit-dur-btn" data-dur="4"   onclick="selectEditDur(4)">온음표<br>●</button>
+        <button class="edit-dur-btn" data-dur="3"   onclick="selectEditDur(3)">점2분<br>♩.</button>
+        <button class="edit-dur-btn" data-dur="2"   onclick="selectEditDur(2)">2분음<br>𝅗𝅥</button>
+        <button class="edit-dur-btn" data-dur="1.5" onclick="selectEditDur(1.5)">점4분<br>♩.</button>
+        <button class="edit-dur-btn" data-dur="1"   onclick="selectEditDur(1)">4분음<br>♩</button>
+        <button class="edit-dur-btn" data-dur="0.75" onclick="selectEditDur(0.75)">점8분<br>♪.</button>
+        <button class="edit-dur-btn" data-dur="0.5" onclick="selectEditDur(0.5)">8분음<br>♪</button>
+        <button class="edit-dur-btn" data-dur="0.25" onclick="selectEditDur(0.25)">16분<br>𝅘𝅥𝅯</button>
+      </div>
+    </div>
+
+    <!-- 미리듣기 -->
+    <div style="margin-bottom:14px;">
+      <button onclick="previewEditNote()" style="width:100%;background:rgba(90,180,232,0.1);border:1px solid rgba(90,180,232,0.3);color:var(--blue);border-radius:10px;padding:10px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;">
+        🔊 이 음 미리 듣기
+      </button>
+    </div>
+
+    <div class="edit-hint">더블클릭 또는 길게 눌러서 편집</div>
+
+    <div class="edit-actions">
+      <button class="edit-cancel-btn" onclick="closeEditModal()">취소</button>
+      <button class="edit-delete-btn" onclick="deleteEditNote()">🗑 삭제</button>
+      <button class="edit-save-btn" onclick="saveEditNote()">✓ 저장</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
