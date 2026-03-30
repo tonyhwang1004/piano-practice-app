@@ -980,44 +980,51 @@ document.getElementById('tempoSlider').oninput=()=>{
 };
 
 async function playAll() {
-  if(isPlaying||!parsedNotes.length) return;
+  if (!parsedNotes.length) return;
 
-  // 재생 탭으로 전환 (tempoSlider DOM 보장)
-  switchTab('playback');
+  // 이전 재생 강제 정지
+  isPlaying = false;
+  stopRequested = false;
+  await sleep(50); // 이전 루프 종료 대기
 
-  // AudioContext 잠금 해제
-  unlockAudio();
-  const _ctx = getAC();
-  if (_ctx.state === 'suspended') await _ctx.resume();
+  // AudioContext 완전 리셋 — 새 악보마다 새로 생성
+  try {
+    if (_actx && _actx.state !== 'closed') await _actx.close();
+  } catch(e) {}
+  try {
+    _actx = new (window.AudioContext || window.webkitAudioContext)();
+    await _actx.resume();
+  } catch(e) { console.warn('AudioContext 생성 실패:', e); return; }
 
-  stopRequested=false; isPlaying=true;
-  document.getElementById('playAllBtn').disabled=true;
+  isPlaying = true;
+  document.getElementById('playAllBtn').disabled = true;
   document.getElementById('progressWrapper').classList.add('visible');
-  document.getElementById('progressFill').style.width='0%';
+  document.getElementById('progressFill').style.width = '0%';
 
-  for(let i=0;i<parsedNotes.length;i++){
-    if(stopRequested) break;
+  for (let i = 0; i < parsedNotes.length; i++) {
+    if (stopRequested) break;
     const entry = parsedNotes[i];
-    const durSec = getBeatDur(entry);                    // 초 단위 (NaN 방어됨)
-    const durMs  = Math.max(100, durSec * 1000);         // ms, 최소 100ms 보장
+    const durSec = getBeatDur(entry);
+    const durMs  = Math.max(150, durSec * 1000);
 
-    document.getElementById('progressFill').style.width=((i/parsedNotes.length)*100)+'%';
+    document.getElementById('progressFill').style.width = ((i / parsedNotes.length) * 100) + '%';
     playEntry(entry);
 
-    ['notesGrid-'+i,'notesGrid2-'+i].forEach(id=>{
-      const c=document.getElementById(id);
-      if(c){c.classList.add('playing');setTimeout(()=>c.classList.remove('playing'),durMs);}
+    ['notesGrid-'+i, 'notesGrid2-'+i].forEach(id => {
+      const c = document.getElementById(id);
+      if (c) { c.classList.add('playing'); setTimeout(() => c.classList.remove('playing'), durMs); }
     });
-    const c2=document.getElementById('notesGrid2-'+i);
-    if(c2) c2.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+    const c2 = document.getElementById('notesGrid2-'+i);
+    if (c2) c2.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
 
     await sleep(durMs);
   }
 
-  document.getElementById('progressFill').style.width=stopRequested?'0%':'100%';
-  setTimeout(()=>document.getElementById('progressWrapper').classList.remove('visible'),700);
-  isPlaying=false; stopRequested=false;
-  document.getElementById('playAllBtn').disabled=false;
+  document.getElementById('progressFill').style.width = stopRequested ? '0%' : '100%';
+  setTimeout(() => document.getElementById('progressWrapper').classList.remove('visible'), 700);
+  isPlaying = false;
+  stopRequested = false;
+  document.getElementById('playAllBtn').disabled = false;
 }
 function stopAll() {
   stopRequested=true; isPlaying=false;
