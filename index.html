@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>악보 피아노 연습 🎹</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700;900&family=DM+Serif+Display:ital@0;1&display=swap');
+
+:root {
+  --bg: #0d0d0f;
+  --surface: #161618;
+  --surface2: #1e1e21;
+  --border: #2a2a2e;
+  --accent: #f5c842;
+  --accent2: #e8915a;
+  --text: #f0ede8;
+  --text-dim: #7a7875;
+  --green: #4ecb8d;
+  --red: #e85a5a;
+  --blue: #5ab4e8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; min-height: 100vh; overflow-x: hidden; }
+body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse 80% 60% at 20% 10%, rgba(245,200,66,0.05) 0%, transparent 60%), radial-gradient(ellipse 60% 80% at 80% 90%, rgba(232,145,90,0.04) 0%, transparent 60%); pointer-events:none; z-index:0; }
+.container { position:relative; z-index:1; max-width:860px; margin:0 auto; padding:32px 20px 80px; }
+
+/* Header */
+.header { text-align:center; margin-bottom:36px; }
+.header-badge { display:inline-block; background:rgba(245,200,66,0.12); border:1px solid rgba(245,200,66,0.3); color:var(--accent); font-size:11px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; padding:5px 14px; border-radius:20px; margin-bottom:12px; }
+.header h1 { font-family:'DM Serif Display',serif; font-size:clamp(28px,7vw,50px); line-height:1.1; letter-spacing:-0.02em; margin-bottom:10px; }
+.header h1 span { color:var(--accent); font-style:italic; }
+.header p { color:var(--text-dim); font-size:13px; line-height:1.6; }
+
+/* Tabs */
+.tab-nav { display:flex; background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:5px; margin-bottom:20px; gap:4px; }
+.tab-btn { flex:1; background:none; border:none; color:var(--text-dim); font-family:inherit; font-size:13px; font-weight:700; padding:10px 6px; border-radius:10px; cursor:pointer; transition:all 0.2s; }
+.tab-btn.active { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+.tab-btn:hover:not(.active) { color:var(--text); }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+
+/* Cards */
+.card { background:var(--surface); border-radius:20px; border:1px solid var(--border); overflow:hidden; margin-bottom:14px; }
+.card-header { padding:13px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:9px; }
+.card-icon { width:26px; height:26px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:13px; background:rgba(245,200,66,0.12); }
+.card-title { font-size:12px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.1em; flex:1; }
+.card-body { padding:18px; }
+
+/* Upload */
+.upload-zone { background:var(--surface); border:2px dashed var(--border); border-radius:18px; padding:40px 28px; text-align:center; cursor:pointer; transition:all 0.3s; margin-bottom:14px; }
+.upload-zone:hover,.upload-zone.drag-over { border-color:var(--accent); background:var(--surface2); }
+.upload-icon { font-size:44px; margin-bottom:12px; display:block; }
+.upload-zone h3 { font-size:16px; font-weight:700; margin-bottom:5px; }
+.upload-zone p { color:var(--text-dim); font-size:13px; }
+#fileInput { display:none; }
+.preview-section { display:none; margin-bottom:14px; }
+.preview-section.visible { display:block; }
+.preview-header { padding:12px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:var(--surface); border-radius:18px 18px 0 0; border:1px solid var(--border); border-bottom:none; }
+.preview-header span { font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.1em; }
+.preview-header button { background:none; border:1px solid var(--border); color:var(--text-dim); font-size:11px; padding:4px 9px; border-radius:7px; cursor:pointer; font-family:inherit; transition:all 0.2s; }
+.preview-header button:hover { border-color:var(--red); color:var(--red); }
+#previewImg { width:100%; max-height:260px; object-fit:contain; display:block; background:#111; border:1px solid var(--border); border-top:none; border-radius:0 0 18px 18px; }
+
+/* Buttons */
+.btn-primary { width:100%; background:var(--accent); color:#0d0d0f; border:none; border-radius:13px; padding:16px; font-size:15px; font-weight:900; font-family:inherit; cursor:pointer; transition:all 0.25s; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:14px; }
+.btn-primary:hover:not(:disabled) { background:#ffd84a; transform:translateY(-2px); box-shadow:0 8px 28px rgba(245,200,66,0.28); }
+.btn-primary:disabled { background:var(--border); color:var(--text-dim); cursor:not-allowed; transform:none; }
+.btn-practice { width:100%; background:linear-gradient(135deg,#5ab4e8,#7c6fef); color:#fff; border:none; border-radius:13px; padding:16px; font-size:15px; font-weight:900; font-family:inherit; cursor:pointer; transition:all 0.25s; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:14px; }
+.btn-practice:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 8px 28px rgba(90,180,232,0.3); }
+.btn-practice:disabled { background:var(--border); color:var(--text-dim); cursor:not-allowed; }
+.btn-green { flex:1; min-width:100px; background:var(--green); color:#0d0d0f; border:none; border-radius:11px; padding:12px 16px; font-size:13px; font-weight:900; font-family:inherit; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:5px; }
+.btn-green:hover:not(:disabled) { background:#65d8a0; transform:translateY(-1px); }
+.btn-green:disabled { background:var(--border); color:var(--text-dim); cursor:not-allowed; }
+.btn-stop { background:rgba(232,90,90,0.12); color:var(--red); border:1px solid rgba(232,90,90,0.3); border-radius:11px; padding:12px 16px; font-size:13px; font-weight:700; font-family:inherit; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:5px; }
+.btn-stop:hover { background:rgba(232,90,90,0.22); border-color:var(--red); }
+.btn-hint { background:rgba(245,200,66,0.1); color:var(--accent); border:1px solid rgba(245,200,66,0.3); border-radius:11px; padding:11px 14px; font-size:12px; font-weight:700; font-family:inherit; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:5px; }
+.btn-hint:hover { background:rgba(245,200,66,0.2); }
+.btn-blue { background:rgba(90,180,232,0.1); color:var(--blue); border:1px solid rgba(90,180,232,0.3); border-radius:11px; padding:11px 14px; font-size:12px; font-weight:700; font-family:inherit; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:5px; }
+.btn-blue:hover { background:rgba(90,180,232,0.2); }
+
+/* Loading */
+.loading-section { display:none; background:var(--surface); border-radius:18px; padding:36px; text-align:center; margin-bottom:14px; border:1px solid var(--border); }
+.loading-section.visible { display:block; }
+.loading-animation { display:flex; justify-content:center; gap:7px; margin-bottom:16px; }
+.loading-bar { width:4px; height:28px; background:var(--accent); border-radius:2px; animation:barPulse 1s ease-in-out infinite; }
+.loading-bar:nth-child(2){animation-delay:0.15s;background:var(--accent2);}
+.loading-bar:nth-child(3){animation-delay:0.3s;}
+.loading-bar:nth-child(4){animation-delay:0.45s;background:var(--accent2);}
+.loading-bar:nth-child(5){animation-delay:0.6s;}
+@keyframes barPulse{0%,100%{transform:scaleY(0.4);opacity:0.4}50%{transform:scaleY(1);opacity:1}}
+.loading-text { color:var(--text-dim); font-size:14px; }
+.loading-text strong { display:block; color:var(--text); font-size:15px; margin-bottom:5px; }
+
+/* Error */
+.error-card { display:none; background:rgba(232,90,90,0.08); border:1px solid rgba(232,90,90,0.3); border-radius:14px; padding:16px; color:var(--red); font-size:13px; margin-bottom:14px; text-align:center; }
+.error-card.visible { display:block; }
+
+/* Info badges */
+.info-row { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:12px; }
+.info-badge { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:4px 10px; font-size:11px; color:var(--text-dim); }
+.info-badge strong { color:var(--text); }
+.description-text { font-size:13px; line-height:1.7; }
+
+/* Notes grid */
+.notes-grid { padding:14px; display:flex; flex-wrap:wrap; gap:6px; }
+.note-chip { background:var(--surface2); border:1px solid var(--border); border-radius:9px; padding:7px 10px; cursor:pointer; transition:all 0.2s; display:flex; flex-direction:column; align-items:center; gap:2px; min-width:50px; }
+.note-chip:hover { border-color:var(--accent); background:rgba(245,200,66,0.07); transform:translateY(-2px); }
+.note-chip.playing { border-color:var(--accent); background:rgba(245,200,66,0.14); }
+.note-chip.correct { border-color:var(--green); background:rgba(78,203,141,0.18); animation:chipCorrect 0.4s ease; }
+.note-chip.wrong { border-color:var(--red); background:rgba(232,90,90,0.18); animation:chipWrong 0.3s ease; }
+.note-chip.done { border-color:#333; opacity:0.4; }
+.note-chip.current-target { border-color:var(--blue); background:rgba(90,180,232,0.15); box-shadow:0 0 0 2px rgba(90,180,232,0.35); }
+@keyframes chipCorrect{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes chipWrong{0%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}100%{transform:translateX(0)}}
+.note-name { font-size:13px; font-weight:900; font-family:'DM Serif Display',serif; color:var(--accent); }
+.note-korean { font-size:10px; color:var(--text-dim); }
+.note-octave { font-size:9px; color:var(--text-dim); opacity:0.5; }
+
+/* Playback */
+.playback-controls { padding:14px 18px; display:flex; gap:9px; flex-wrap:wrap; }
+.tempo-control { padding:0 18px 14px; display:flex; align-items:center; gap:10px; }
+.tempo-label { font-size:11px; color:var(--text-dim); font-weight:700; white-space:nowrap; letter-spacing:0.05em; text-transform:uppercase; }
+#tempoSlider { flex:1; -webkit-appearance:none; height:4px; background:var(--border); border-radius:2px; outline:none; }
+#tempoSlider::-webkit-slider-thumb { -webkit-appearance:none; width:17px; height:17px; background:var(--accent); border-radius:50%; cursor:pointer; }
+.tempo-value { font-size:12px; font-weight:900; color:var(--accent); min-width:52px; text-align:right; }
+.progress-bar-wrapper { padding:0 18px 12px; display:none; }
+.progress-bar-wrapper.visible { display:block; }
+.progress-track { height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:2px; transition:width 0.1s linear; width:0%; }
+
+/* ═══ PRACTICE MODE ═══ */
+.practice-section { display:none; }
+.practice-section.visible { display:block; }
+
+.score-board { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; padding:14px; }
+.score-item { background:var(--surface2); border:1px solid var(--border); border-radius:13px; padding:14px 10px; text-align:center; }
+.score-num { font-family:'DM Serif Display',serif; font-size:30px; }
+.score-num.accent { color:var(--accent); }
+.score-num.green { color:var(--green); }
+.score-num.red { color:var(--red); }
+.score-label { font-size:10px; color:var(--text-dim); font-weight:700; letter-spacing:0.08em; text-transform:uppercase; margin-top:3px; }
+
+/* Current note */
+.cnd-wrap { background:var(--surface2); border:2px solid var(--blue); border-radius:18px; padding:24px 18px; text-align:center; margin-bottom:14px; transition:border-color 0.3s; }
+.cnd-wrap.correct-flash { border-color:var(--green); animation:flashGreen 0.5s ease; }
+.cnd-wrap.wrong-flash { border-color:var(--red); animation:flashRed 0.4s ease; }
+@keyframes flashGreen{0%,100%{box-shadow:none}50%{box-shadow:0 0 28px rgba(78,203,141,0.4)}}
+@keyframes flashRed{0%,100%{box-shadow:none}50%{box-shadow:0 0 28px rgba(232,90,90,0.4)}}
+.cnd-label { font-size:10px; color:var(--blue); font-weight:700; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:8px; }
+.cnd-note { font-family:'DM Serif Display',serif; font-size:60px; line-height:1; }
+.cnd-korean { font-size:20px; color:var(--accent); font-weight:700; margin-top:3px; }
+.cnd-sub { font-size:11px; color:var(--text-dim); margin-top:6px; }
+.cnd-feedback { font-size:16px; font-weight:900; margin-top:8px; min-height:24px; }
+.cnd-feedback.ok { color:var(--green); }
+.cnd-feedback.ng { color:var(--red); }
+
+/* Progress dots */
+.note-progress-bar { display:flex; gap:3px; flex-wrap:wrap; padding:10px 14px; }
+.npb-dot { width:9px; height:9px; border-radius:3px; background:var(--border); transition:background 0.2s; flex-shrink:0; }
+.npb-dot.done-ok { background:var(--green); }
+.npb-dot.done-ng { background:var(--red); }
+.npb-dot.current { background:var(--blue); box-shadow:0 0 6px rgba(90,180,232,0.6); }
+
+.practice-controls { padding:14px 18px; display:flex; gap:8px; flex-wrap:wrap; }
+
+/* Sheet overlay */
+.sheet-overlay-wrapper { position:relative; display:block; width:100%; }
+#practiceSheetImg { width:100%; max-height:280px; object-fit:contain; display:block; background:#111; }
+.sheet-overlay-canvas { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
+
+/* ═══ PIANO ═══ */
+.piano-section { background:var(--surface); border-radius:18px; border:1px solid var(--border); overflow:hidden; margin-bottom:14px; display:none; }
+.piano-section.visible { display:block; }
+.piano-header { padding:12px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+.piano-header-left { display:flex; align-items:center; gap:8px; }
+.piano-oct-ctrl { display:flex; gap:5px; align-items:center; }
+.oct-btn { background:var(--surface2); border:1px solid var(--border); color:var(--text); width:26px; height:26px; border-radius:6px; cursor:pointer; font-size:13px; font-family:inherit; transition:all 0.2s; display:flex; align-items:center; justify-content:center; font-weight:700; }
+.oct-btn:hover { border-color:var(--accent); color:var(--accent); }
+.oct-display { font-size:11px; color:var(--text-dim); font-weight:700; min-width:60px; text-align:center; }
+.piano-wrapper { overflow-x:auto; padding:18px 14px 22px; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+.piano-wrapper::-webkit-scrollbar { height:4px; }
+.piano-wrapper::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.piano-keys { display:flex; position:relative; height:130px; user-select:none; width:max-content; margin:0 auto; }
+
+/* White keys */
+.wkey { width:42px; height:130px; background:#f8f5ee; border:1px solid #ccc; border-radius:0 0 7px 7px; cursor:pointer; position:relative; transition:background 0.08s,transform 0.08s; flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding-bottom:7px; box-shadow:0 3px 7px rgba(0,0,0,0.3),inset 0 -2px 0 rgba(0,0,0,0.08); }
+.wkey:hover { background:#fffde0; }
+.wkey.pressed,.wkey:active { background:#ffeaa0; transform:scaleY(0.97); box-shadow:0 1px 3px rgba(0,0,0,0.3); }
+.wkey.target { background:#d4eeff; border-color:#5ab4e8; box-shadow:0 0 0 2px rgba(90,180,232,0.7),0 3px 8px rgba(0,0,0,0.3); animation:wkeyPulse 1s ease-in-out infinite; }
+.wkey.correct-key { background:#c5fad9 !important; border-color:var(--green); box-shadow:0 0 14px rgba(78,203,141,0.5); }
+.wkey.wrong-key { background:#ffd4d4 !important; border-color:var(--red); box-shadow:0 0 14px rgba(232,90,90,0.5); }
+@keyframes wkeyPulse{0%,100%{box-shadow:0 0 0 2px rgba(90,180,232,0.7),0 3px 8px rgba(0,0,0,0.3)}50%{box-shadow:0 0 0 4px rgba(90,180,232,0.9),0 3px 12px rgba(90,180,232,0.25)}}
+.key-label { font-size:10px; font-weight:700; color:#aaa; line-height:1; }
+.key-label.tl { color:#5ab4e8; font-size:11px; }
+.key-note { font-size:8px; color:#ccc; }
+
+/* Black keys */
+.bkey { width:28px; height:82px; background:linear-gradient(180deg,#2a2a2a 0%,#111 100%); border-radius:0 0 5px 5px; cursor:pointer; position:absolute; top:0; transition:background 0.08s,transform 0.08s; z-index:2; box-shadow:2px 4px 7px rgba(0,0,0,0.6),inset 0 -2px 0 rgba(255,255,255,0.04); display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding-bottom:5px; }
+.bkey:hover { background:linear-gradient(180deg,#383838 0%,#222 100%); }
+.bkey.pressed,.bkey:active { background:linear-gradient(180deg,#555 0%,#333 100%); transform:scaleY(0.97); }
+.bkey.target { background:linear-gradient(180deg,#1a3d5c 0%,#0a2840 100%); box-shadow:0 0 0 2px rgba(90,180,232,0.9),2px 4px 7px rgba(0,0,0,0.6); animation:bkeyPulse 1s ease-in-out infinite; }
+.bkey.correct-key { background:linear-gradient(180deg,#1a4a2c 0%,#0a3018 100%) !important; box-shadow:0 0 12px rgba(78,203,141,0.5); }
+.bkey.wrong-key { background:linear-gradient(180deg,#4a1c1c 0%,#300808 100%) !important; box-shadow:0 0 12px rgba(232,90,90,0.5); }
+@keyframes bkeyPulse{0%,100%{box-shadow:0 0 0 2px rgba(90,180,232,0.9)}50%{box-shadow:0 0 0 4px rgba(90,180,232,1)}}
+.bkey .key-label { font-size:8px; color:#666; }
+.bkey .key-label.tl { color:#5ab4e8; font-size:9px; }
+
+.kb-hint { padding:6px 18px 14px; font-size:10px; color:var(--text-dim); text-align:center; }
+
+/* Finish */
+.result-finish { display:none; background:var(--surface); border:2px solid var(--green); border-radius:18px; padding:36px 28px; text-align:center; margin-bottom:14px; }
+.result-finish.visible { display:block; }
+.result-finish h2 { font-family:'DM Serif Display',serif; font-size:32px; margin-bottom:10px; }
+.result-finish .big-score { font-family:'DM Serif Display',serif; font-size:68px; color:var(--green); line-height:1; margin-bottom:6px; }
+.result-finish p { color:var(--text-dim); font-size:13px; margin-bottom:22px; line-height:1.6; }
+
+.note-chip.chord-chip { background: linear-gradient(135deg, var(--surface2), rgba(90,180,232,0.08)); border-color: rgba(90,180,232,0.35); min-width: 70px; }
+.note-chip.chord-chip:hover { border-color: var(--blue); background: rgba(90,180,232,0.12); }
+.note-chip.chord-chip.current-target { border-color: var(--blue); background: rgba(90,180,232,0.2); box-shadow: 0 0 0 2px rgba(90,180,232,0.4); }
+.chord-name { font-size: 11px !important; letter-spacing: -0.02em; }
+
+/* ═══ MIC INPUT ═══ */
+.mic-section { background:var(--surface); border-radius:18px; border:1px solid var(--border); overflow:hidden; margin-bottom:14px; display:none; }
+.mic-section.visible { display:block; }
+.mic-header { padding:12px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.mic-header-left { display:flex; align-items:center; gap:8px; }
+.mic-toggle-btn {
+  background: rgba(232,90,90,0.12); color: var(--red);
+  border: 1px solid rgba(232,90,90,0.3);
+  border-radius: 10px; padding: 7px 14px;
+  font-size: 12px; font-weight: 700; font-family: inherit;
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.mic-toggle-btn.active { background: rgba(78,203,141,0.15); color: var(--green); border-color: rgba(78,203,141,0.4); }
+.mic-toggle-btn:hover { opacity:0.85; }
+.mic-body { padding: 14px 18px; }
+.mic-status-row { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+.mic-dot { width:10px; height:10px; border-radius:50%; background:var(--border); flex-shrink:0; transition: background 0.2s; }
+.mic-dot.listening { background:var(--green); box-shadow:0 0 8px rgba(78,203,141,0.6); animation: micPulse 1s ease-in-out infinite; }
+.mic-dot.detecting { background:var(--accent); box-shadow:0 0 10px rgba(245,200,66,0.7); animation: micPulse 0.4s ease-in-out infinite; }
+@keyframes micPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.mic-status-text { font-size:12px; color:var(--text-dim); }
+.mic-status-text strong { color:var(--text); }
+
+/* Visualizer bar */
+.mic-viz { height:48px; background:var(--surface2); border-radius:10px; overflow:hidden; position:relative; margin-bottom:12px; border:1px solid var(--border); }
+.mic-viz canvas { width:100%; height:100%; display:block; }
+
+/* Detected note display */
+.mic-detected { display:flex; align-items:center; gap:12px; }
+.mic-note-big {
+  font-family:'DM Serif Display',serif; font-size:38px; color:var(--accent);
+  min-width:64px; text-align:center; line-height:1;
+}
+.mic-note-info { flex:1; }
+.mic-note-kr { font-size:16px; font-weight:700; color:var(--text); }
+.mic-note-freq { font-size:11px; color:var(--text-dim); margin-top:2px; }
+.mic-confidence { margin-top:4px; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+.mic-confidence-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--green)); border-radius:2px; transition:width 0.1s; }
+
+/* Mode selector */
+.mic-mode-row { display:flex; gap:6px; margin-bottom:10px; }
+.mic-mode-btn { flex:1; background:var(--surface2); border:1px solid var(--border); color:var(--text-dim); border-radius:8px; padding:7px; font-size:11px; font-weight:700; font-family:inherit; cursor:pointer; transition:all 0.2s; }
+.mic-mode-btn.active { background:rgba(90,180,232,0.15); border-color:var(--blue); color:var(--blue); }
+
+/* Sensitivity slider */
+.sens-row { display:flex; align-items:center; gap:10px; margin-top:8px; }
+.sens-label { font-size:11px; color:var(--text-dim); font-weight:700; text-transform:uppercase; letter-spacing:0.05em; white-space:nowrap; }
+#sensSlider { flex:1; -webkit-appearance:none; height:3px; background:var(--border); border-radius:2px; outline:none; }
+#sensSlider::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; background:var(--green); border-radius:50%; cursor:pointer; }
+.sens-val { font-size:11px; font-weight:700; color:var(--green); min-width:28px; text-align:right; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-badge">🎹 AI 피아노 연습</div>
+    <h1>악보로 <span>피아노</span> 연습</h1>
+    <p>악보 사진을 올리면 AI가 음표를 인식하고<br>화면 건반으로 실시간 피아노 연습을 도와드립니다</p>
+  </div>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('analyze')">📋 악보 분석</button>
+    <button class="tab-btn" onclick="switchTab('playback')">▶ 재생</button>
+    <button class="tab-btn" onclick="switchTab('practice')">🎹 연습 모드</button>
+  </div>
+
+  <!-- ═══ TAB: ANALYZE ═══ -->
+  <div class="tab-content active" id="tab-analyze">
+    <div class="upload-zone" id="uploadZone">
+      <span class="upload-icon">📷</span>
+      <h3>악보 사진 업로드</h3>
+      <p>클릭하거나 드래그해서 악보 이미지를 올려주세요<br>JPG · PNG · WEBP 지원</p>
+      <input type="file" id="fileInput" accept="image/*" capture="environment">
+    </div>
+
+    <div class="preview-section" id="previewSection">
+      <div class="preview-header">
+        <span>📄 업로드된 악보</span>
+        <button onclick="resetAll()">✕ 초기화</button>
+      </div>
+      <img id="previewImg" src="" alt="악보 미리보기">
+    </div>
+
+    <button class="btn-primary" id="analyzeBtn" disabled onclick="analyzeSheet()">🔍 AI로 악보 분석하기</button>
+    <div class="error-card" id="errorCard"></div>
+
+    <div class="loading-section" id="loadingSection">
+      <div class="loading-animation">
+        <div class="loading-bar"></div><div class="loading-bar"></div><div class="loading-bar"></div><div class="loading-bar"></div><div class="loading-bar"></div>
+      </div>
+      <div class="loading-text"><strong>AI가 악보를 읽고 있어요</strong>음표와 계이름을 분석 중입니다...</div>
+    </div>
+
+    <div id="resultSection" style="display:none;">
+      <div class="card">
+        <div class="card-header"><div class="card-icon">📋</div><div class="card-title">악보 분석 결과</div></div>
+        <div class="card-body">
+          <div class="info-row" id="infoRow"></div>
+          <div class="description-text" id="descriptionText"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-icon">🎵</div><div class="card-title">인식된 음표 — 클릭하면 소리 재생</div></div>
+        <div class="notes-grid" id="notesGrid"></div>
+      </div>
+      <button class="btn-practice" onclick="startPractice()">🎹 연습 모드 시작하기</button>
+    </div>
+  </div>
+
+  <!-- ═══ TAB: PLAYBACK ═══ -->
+  <div class="tab-content" id="tab-playback">
+    <div id="playbackEmpty" style="text-align:center;color:var(--text-dim);font-size:13px;padding:40px 20px;">
+      먼저 <strong style="color:var(--text)">악보 분석</strong> 탭에서 악보를 분석해 주세요
+    </div>
+    <div id="playbackContent" style="display:none;">
+      <div class="card">
+        <div class="card-header"><div class="card-icon">▶️</div><div class="card-title">전체 재생</div></div>
+        <div class="playback-controls">
+          <button class="btn-green" id="playAllBtn" onclick="playAll()">▶ 전체 재생</button>
+          <button class="btn-stop" onclick="stopAll()">■ 정지</button>
+        </div>
+        <div class="tempo-control">
+          <span class="tempo-label">속도</span>
+          <input type="range" id="tempoSlider" min="40" max="200" value="80">
+          <span class="tempo-value" id="tempoValue">80 BPM</span>
+        </div>
+        <div class="progress-bar-wrapper" id="progressWrapper">
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-icon">🎵</div><div class="card-title">음표 목록</div></div>
+        <div class="notes-grid" id="notesGrid2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TAB: PRACTICE ═══ -->
+  <div class="tab-content" id="tab-practice">
+    <div id="practiceEmpty" style="text-align:center;color:var(--text-dim);font-size:13px;padding:40px 20px;line-height:1.8;">
+      먼저 <strong style="color:var(--text)">악보 분석</strong> 탭에서 악보를 분석한 후<br><strong style="color:var(--text)">연습 모드 시작하기</strong>를 눌러주세요
+    </div>
+
+    <div class="practice-section" id="practiceSection">
+      <!-- Sheet + overlay -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">📄</div>
+          <div class="card-title">악보</div>
+          <div style="font-size:11px;color:var(--text-dim);" id="practicePos">0 / 0</div>
+        </div>
+        <div class="sheet-overlay-wrapper">
+          <img id="practiceSheetImg" src="" alt="악보">
+          <canvas class="sheet-overlay-canvas" id="overlayCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Score -->
+      <div class="card">
+        <div class="card-header"><div class="card-icon">📊</div><div class="card-title">점수판</div></div>
+        <div class="score-board">
+          <div class="score-item"><div class="score-num accent" id="scoreTotal">0</div><div class="score-label">진행</div></div>
+          <div class="score-item"><div class="score-num green" id="scoreCorrect">0</div><div class="score-label">정확 ✓</div></div>
+          <div class="score-item"><div class="score-num red" id="scoreWrong">0</div><div class="score-label">틀림 ✗</div></div>
+        </div>
+        <div class="note-progress-bar" id="noteProgressBar"></div>
+      </div>
+
+      <!-- Current note display -->
+      <div class="cnd-wrap" id="cndWrap">
+        <div class="cnd-label">지금 연주할 음</div>
+        <div class="cnd-note" id="cndNote">-</div>
+        <div class="cnd-korean" id="cndKorean">-</div>
+        <div class="cnd-sub" id="cndSub">건반에서 이 음을 찾아 눌러보세요</div>
+        <div class="cnd-feedback" id="cndFeedback"></div>
+      </div>
+
+      <!-- Practice notes chips -->
+      <div class="card">
+        <div class="card-header"><div class="card-icon">🎵</div><div class="card-title">음표 진행</div></div>
+        <div class="notes-grid" id="practiceNotesGrid"></div>
+      </div>
+
+      <!-- Practice controls -->
+      <div class="card">
+        <div class="card-header"><div class="card-icon">🎮</div><div class="card-title">연습 도구</div></div>
+        <div class="practice-controls">
+          <button class="btn-hint" onclick="playHint()">🔊 힌트 듣기</button>
+          <button class="btn-hint" onclick="skipNote()">⏭ 이 음 넘기기</button>
+          <button class="btn-blue" onclick="restartPractice()">🔄 처음부터</button>
+          <button class="btn-stop" onclick="endPractice()">✕ 종료</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mic Input -->
+    <div class="mic-section" id="micSection">
+      <div class="mic-header">
+        <div class="mic-header-left">
+          <div class="card-icon">🎙</div>
+          <span style="font-size:12px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;">실제 피아노 마이크 인식</span>
+        </div>
+        <button class="mic-toggle-btn" id="micToggleBtn" onclick="toggleMic()">🎙 마이크 시작</button>
+      </div>
+      <div class="mic-body">
+        <!-- Mode -->
+        <div class="mic-mode-row">
+          <button class="mic-mode-btn active" id="modeBtnAuto" onclick="setMicMode('auto')">🤖 자동 진행</button>
+          <button class="mic-mode-btn" id="modeBtnManual" onclick="setMicMode('manual')">✋ 수동 확인</button>
+          <button class="mic-mode-btn" id="modeBtnFree" onclick="setMicMode('free')">🎹 자유 연주</button>
+        </div>
+        <!-- Status -->
+        <div class="mic-status-row">
+          <div class="mic-dot" id="micDot"></div>
+          <div class="mic-status-text" id="micStatusText">마이크 시작 버튼을 누르세요</div>
+        </div>
+        <!-- Visualizer -->
+        <div class="mic-viz"><canvas id="micVizCanvas"></canvas></div>
+        <!-- Detected note -->
+        <div class="mic-detected">
+          <div class="mic-note-big" id="micNoteBig">—</div>
+          <div class="mic-note-info">
+            <div class="mic-note-kr" id="micNoteKr">-</div>
+            <div class="mic-note-freq" id="micNoteFreq">-</div>
+            <div class="mic-confidence"><div class="mic-confidence-fill" id="micConfFill" style="width:0%"></div></div>
+          </div>
+        </div>
+        <!-- Sensitivity -->
+        <div class="sens-row">
+          <span class="sens-label">감도</span>
+          <input type="range" id="sensSlider" min="1" max="10" value="5">
+          <span class="sens-val" id="sensVal">5</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Piano -->
+    <div class="piano-section" id="pianoSection">
+      <div class="piano-header">
+        <div class="piano-header-left">
+          <div class="card-icon">🎹</div>
+          <span style="font-size:12px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;">피아노 건반</span>
+        </div>
+        <div class="piano-oct-ctrl">
+          <button class="oct-btn" onclick="shiftOctave(-1)">◀</button>
+          <span class="oct-display" id="octDisplay">옥타브 3-5</span>
+          <button class="oct-btn" onclick="shiftOctave(1)">▶</button>
+        </div>
+      </div>
+      <div class="piano-wrapper">
+        <div class="piano-keys" id="pianoKeys"></div>
+      </div>
+      <div class="kb-hint">키보드: <kbd>A S D F G H J K L</kbd> = 흰 건반 &nbsp;|&nbsp; <kbd>W E T Y U</kbd> = 검은 건반</div>
+    </div>
+
+    <!-- Finish -->
+    <div class="result-finish" id="resultFinish">
+      <h2>🎉 완주!</h2>
+      <div class="big-score" id="finishScore">-</div>
+      <p id="finishMsg"></p>
+      <button class="btn-blue" style="margin:0 auto;width:auto;padding:14px 32px;font-size:14px;" onclick="restartPractice()">🔄 다시 연습하기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════
+// STATE
+// ═══════════════════════════════
+let uploadedImageBase64 = null;
+let uploadedMediaType = 'image/jpeg';
+let parsedNotes = [];
+let audioCtx = null;
+let isPlaying = false;
+let stopRequested = false;
+
+// Practice
+let practiceNotes = [];
+let practiceIndex = 0;
+let practiceCorrect = 0;
+let practiceWrong = 0;
+let practiceActive = false;
+let waitingForInput = false;
+let practiceResults = [];
+let octaveShift = 0;
+
+const WHITE_NOTES = ['C','D','E','F','G','A','B'];
+const BLACK_AFTER = { 'C':'C#', 'D':'D#', 'F':'F#', 'G':'G#', 'A':'A#' };
+const SHOWN_OCTS = [3,4,5];
+
+// ═══════════════════════════════
+// FREQUENCIES
+// ═══════════════════════════════
+const NOTE_FREQ = {};
+['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'].forEach((n,i)=>{
+  for(let o=1;o<=7;o++) NOTE_FREQ[n+o] = 440*Math.pow(2,((o+1)*12+i-69)/12);
+});
+const ALIASES = {'Db':'C#','Eb':'D#','Gb':'F#','Ab':'G#','Bb':'A#'};
+Object.keys(ALIASES).forEach(k=>{ for(let o=1;o<=7;o++) NOTE_FREQ[k+o]=NOTE_FREQ[ALIASES[k]+o]; });
+
+const KR = {'C':'도','D':'레','E':'미','F':'파','G':'솔','A':'라','B':'시','C#':'도#','D#':'레#','F#':'파#','G#':'솔#','A#':'라#','Db':'도♭','Eb':'레♭','Gb':'파♭','Ab':'솔♭','Bb':'라♭','REST':'쉼표'};
+
+function parseNote(str) {
+  if (!str || str==='REST') return {base:'REST',octave:null};
+  const m = str.match(/^([A-G][#b]?)(\d)$/);
+  return m ? {base:m[1],octave:parseInt(m[2])} : {base:str,octave:null};
+}
+function normBase(b) { return ALIASES[b]||b; }
+
+// ═══════════════════════════════
+// AUDIO
+// ═══════════════════════════════
+function getAC() {
+  if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  if (audioCtx.state==='suspended') audioCtx.resume();
+  return audioCtx;
+}
+function playTone(noteStr, dur=0.6, vol=0.3) {
+  const freq = NOTE_FREQ[noteStr]||0;
+  if (!freq) return;
+  const ctx = getAC();
+  const g = ctx.createGain();
+  g.connect(ctx.destination);
+  g.gain.setValueAtTime(0,ctx.currentTime);
+  g.gain.linearRampToValueAtTime(vol,ctx.currentTime+0.012);
+  g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+Math.max(0.1,dur*0.93));
+  [1,2,3,4].forEach((h,i)=>{
+    const o=ctx.createOscillator(), hg=ctx.createGain();
+    o.type=i===0?'triangle':'sine'; o.frequency.value=freq*h;
+    hg.gain.value=[0.6,0.2,0.1,0.05][i];
+    o.connect(hg); hg.connect(g);
+    o.start(ctx.currentTime); o.stop(ctx.currentTime+Math.max(0.1,dur*0.93));
+  });
+}
+
+// ═══════════════════════════════
+// TABS
+// ═══════════════════════════════
+function switchTab(tab) {
+  ['analyze','playback','practice'].forEach((t,i)=>{
+    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+    document.querySelectorAll('.tab-btn')[i].classList.toggle('active',t===tab);
+  });
+}
+
+// ═══════════════════════════════
+// UPLOAD
+// ═══════════════════════════════
+const uz = document.getElementById('uploadZone');
+const fi = document.getElementById('fileInput');
+uz.onclick = ()=>fi.click();
+uz.ondragover = e=>{e.preventDefault();uz.classList.add('drag-over');};
+uz.ondragleave = ()=>uz.classList.remove('drag-over');
+uz.ondrop = e=>{e.preventDefault();uz.classList.remove('drag-over');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);};
+fi.onchange = e=>{if(e.target.files[0])handleFile(e.target.files[0]);};
+
+function handleFile(file) {
+  uploadedMediaType = file.type||'image/jpeg';
+  const r=new FileReader();
+  r.onload=ev=>{
+    const url=ev.target.result;
+    uploadedImageBase64=url.split(',')[1];
+    document.getElementById('previewImg').src=url;
+    document.getElementById('practiceSheetImg').src=url;
+    document.getElementById('previewSection').classList.add('visible');
+    document.getElementById('analyzeBtn').disabled=false;
+    hideError();
+    document.getElementById('resultSection').style.display='none';
+    document.getElementById('loadingSection').classList.remove('visible');
+  };
+  r.readAsDataURL(file);
+}
+
+function resetAll() {
+  stopAll(); endPractice();
+  uploadedImageBase64=null; parsedNotes=[];
+  document.getElementById('previewImg').src='';
+  document.getElementById('previewSection').classList.remove('visible');
+  document.getElementById('resultSection').style.display='none';
+  document.getElementById('loadingSection').classList.remove('visible');
+  document.getElementById('analyzeBtn').disabled=true;
+  document.getElementById('playbackEmpty').style.display='';
+  document.getElementById('playbackContent').style.display='none';
+  fi.value=''; hideError();
+}
+
+// ═══════════════════════════════
+// ANALYZE
+// ═══════════════════════════════
+async function analyzeSheet() {
+  if (!uploadedImageBase64) return;
+  hideError();
+  document.getElementById('loadingSection').classList.add('visible');
+  document.getElementById('resultSection').style.display='none';
+  document.getElementById('analyzeBtn').disabled=true;
+
+  const sys = `You are an expert music score reader. Analyze the sheet music image and return ONLY valid JSON, nothing else.
+
+Format:
+{
+  "title": "piece title or 알 수 없음",
+  "key": "e.g. D major",
+  "timeSignature": "e.g. 6/8",
+  "tempo": "e.g. 40 BPM",
+  "description": "2-3 sentences in Korean",
+  "notes": [
+    {"notes": ["C4"], "duration": 1, "label": "도", "isChord": false},
+    {"notes": ["E4","G4","C5"], "duration": 1, "label": "도미솔", "isChord": true},
+    {"notes": ["REST"], "duration": 0.5, "label": "쉼표", "isChord": false}
+  ]
+}
+
+CRITICAL RULES:
+- Every entry uses "notes" (array), NEVER a single "note" string.
+- Single notes: "notes": ["C4"]  with isChord: false
+- Chords (multiple simultaneous notes): "notes": ["C4","E4","G4"] with isChord: true — list ALL notes of the chord from lowest to highest.
+- Rests: "notes": ["REST"] with isChord: false
+- Note format: C4, D#4, Eb5 (letter + optional sharp/flat + octave digit)
+- duration: quarter=1, eighth=0.5, half=2, whole=4, dotted-quarter=1.5
+- label: Korean solfege name(s) joined with spaces e.g. "도미솔" for chords
+- Maximum 60 beat-positions (a chord counts as ONE position). Focus on right-hand melody + chords.
+- Valid JSON only, no trailing commas.`;
+
+  try {
+    const res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:4000,system:sys,
+        messages:[{role:"user",content:[
+          {type:"image",source:{type:"base64",media_type:uploadedMediaType,data:uploadedImageBase64}},
+          {type:"text",text:"악보를 분석해주세요. JSON만 반환해주세요."}
+        ]}]})
+    });
+    const data=await res.json();
+    if(data.error) throw new Error(data.error.message);
+    const raw=data.content.map(b=>b.text||'').join('');
+    const m=raw.match(/\{[\s\S]*\}/);
+    if(!m) throw new Error('JSON을 찾을 수 없습니다');
+    displayResults(JSON.parse(m[0]));
+  } catch(err) {
+    showError('분석 오류: '+err.message);
+  } finally {
+    document.getElementById('loadingSection').classList.remove('visible');
+    document.getElementById('analyzeBtn').disabled=false;
+  }
+}
+
+// ═══════════════════════════════
+// DISPLAY RESULTS
+// ═══════════════════════════════
+function normalizeEntry(raw) {
+  // Supports both new {notes:[...]} and legacy {note:"..."} format
+  let notesArr = raw.notes || (raw.note ? [raw.note] : ['REST']);
+  notesArr = notesArr.filter(n => n && n !== '');
+  const isRest = notesArr.length === 0 || notesArr.every(n => n === 'REST');
+  return {
+    notes: isRest ? ['REST'] : notesArr,
+    duration: raw.duration || 0.5,
+    label: raw.label || '',
+    isChord: !isRest && (notesArr.length > 1 || raw.isChord === true)
+  };
+}
+
+function displayResults(data) {
+  // Normalize all entries, remove pure rests
+  parsedNotes = (data.notes || [])
+    .map(normalizeEntry)
+    .filter(n => !n.notes.every(x => x === 'REST'));
+
+  const ir=document.getElementById('infoRow'); ir.innerHTML='';
+  if(data.title&&data.title!=='알 수 없음') addBadge(ir,'🎼','제목',data.title);
+  if(data.key) addBadge(ir,'🔑','조성',data.key);
+  if(data.timeSignature) addBadge(ir,'⏱','박자',data.timeSignature);
+  if(data.tempo) addBadge(ir,'🥁','빠르기',data.tempo);
+  const chordCount = parsedNotes.filter(n=>n.isChord).length;
+  addBadge(ir,'🎵','음표',parsedNotes.length+'개');
+  if(chordCount>0) addBadge(ir,'🎶','화음',chordCount+'개');
+  document.getElementById('descriptionText').textContent=data.description||'';
+  buildGrid('notesGrid', parsedNotes, i=>{ playEntry(parsedNotes[i]); hiliteChip('notesGrid',i); });
+  buildGrid('notesGrid2', parsedNotes, i=>{ playEntry(parsedNotes[i]); hiliteChip('notesGrid2',i); });
+  document.getElementById('resultSection').style.display='block';
+  document.getElementById('playbackEmpty').style.display='none';
+  document.getElementById('playbackContent').style.display='block';
+  if(data.tempo){const bm=data.tempo.match(/\d+/);if(bm){const v=Math.min(200,Math.max(40,parseInt(bm[0])));document.getElementById('tempoSlider').value=v;document.getElementById('tempoValue').textContent=v+' BPM';}}
+}
+
+function getBeatDur(entry) {
+  const bpm=parseInt(document.getElementById('tempoSlider').value);
+  return ((entry.duration||0.5)*60)/bpm;
+}
+
+// Play all notes of an entry (chord = simultaneous)
+function playEntry(entry) {
+  const dur = getBeatDur(entry);
+  entry.notes.forEach(n => playTone(n, dur));
+}
+
+function buildGrid(id, notes, cb) {
+  const g=document.getElementById(id); g.innerHTML='';
+  notes.forEach((entry,i)=>{
+    const c=document.createElement('div');
+    c.className='note-chip' + (entry.isChord?' chord-chip':'');
+    c.id=id+'-'+i;
+    if(entry.isChord) {
+      // Chord chip: show all note names stacked
+      const noteNames = entry.notes.map(n=>{ const {base}=parseNote(n); return base; }).join('+');
+      const kr = entry.label || entry.notes.map(n=>{ const {base}=parseNote(n); return KR[base]||base; }).join(' ');
+      c.innerHTML=`<span class="note-name chord-name">${noteNames}</span><span class="note-korean">${kr}</span><span class="note-octave">화음</span>`;
+    } else {
+      const {base,octave}=parseNote(entry.notes[0]);
+      const kr=entry.label||KR[base]||base;
+      c.innerHTML=`<span class="note-name">${base}</span><span class="note-korean">${kr}</span>${octave?`<span class="note-octave">Oct${octave}</span>`:''}`;
+    }
+    c.onclick=()=>cb(i); g.appendChild(c);
+  });
+}
+
+function hiliteChip(gridId, i) {
+  const c=document.getElementById(gridId+'-'+i);
+  if(!c) return;
+  c.classList.add('playing');
+  const dur=getBeatDur(parsedNotes[i])*1000;
+  setTimeout(()=>c.classList.remove('playing'),Math.max(300,dur));
+}
+
+function addBadge(container,icon,label,value) {
+  const b=document.createElement('div'); b.className='info-badge';
+  b.innerHTML=`${icon} ${label}: <strong>${value}</strong>`; container.appendChild(b);
+}
+
+// ═══════════════════════════════
+// PLAYBACK
+// ═══════════════════════════════
+document.getElementById('tempoSlider').oninput=()=>{
+  document.getElementById('tempoValue').textContent=document.getElementById('tempoSlider').value+' BPM';
+};
+
+async function playAll() {
+  if(isPlaying||!parsedNotes.length) return;
+  stopRequested=false; isPlaying=true;
+  document.getElementById('playAllBtn').disabled=true;
+  document.getElementById('progressWrapper').classList.add('visible');
+  document.getElementById('progressFill').style.width='0%';
+  for(let i=0;i<parsedNotes.length;i++){
+    if(stopRequested) break;
+    const entry=parsedNotes[i];
+    const dur=getBeatDur(entry)*1000;
+    document.getElementById('progressFill').style.width=((i/parsedNotes.length)*100)+'%';
+    playEntry(entry);
+    ['notesGrid-'+i,'notesGrid2-'+i].forEach(id=>{const c=document.getElementById(id);if(c){c.classList.add('playing');setTimeout(()=>c.classList.remove('playing'),dur);}});
+    const c2=document.getElementById('notesGrid2-'+i);
+    if(c2) c2.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+    await sleep(dur);
+  }
+  document.getElementById('progressFill').style.width=stopRequested?'0%':'100%';
+  setTimeout(()=>document.getElementById('progressWrapper').classList.remove('visible'),700);
+  isPlaying=false; stopRequested=false; document.getElementById('playAllBtn').disabled=false;
+}
+function stopAll() {
+  stopRequested=true; isPlaying=false;
+  document.getElementById('playAllBtn').disabled=false;
+  document.getElementById('progressWrapper').classList.remove('visible');
+  document.querySelectorAll('.note-chip').forEach(c=>c.classList.remove('playing'));
+}
+
+// ═══════════════════════════════
+// PRACTICE MODE
+// ═══════════════════════════════
+function startPractice() {
+  if (!parsedNotes.length) return;
+  practiceNotes=[...parsedNotes];
+  switchTab('practice');
+  initPractice();
+}
+
+function initPractice() {
+  practiceIndex=0; practiceCorrect=0; practiceWrong=0;
+  practiceActive=true; waitingForInput=false;
+  practiceResults=new Array(practiceNotes.length).fill(null);
+
+  document.getElementById('practiceEmpty').style.display='none';
+  document.getElementById('practiceSection').classList.add('visible');
+  document.getElementById('pianoSection').classList.add('visible');
+  document.getElementById('micSection').classList.add('visible');
+  document.getElementById('resultFinish').classList.remove('visible');
+
+  // Progress dots
+  const bar=document.getElementById('noteProgressBar'); bar.innerHTML='';
+  practiceNotes.forEach((_,i)=>{ const d=document.createElement('div'); d.className='npb-dot'; d.id='npb-'+i; bar.appendChild(d); });
+
+  buildPracticeGrid();
+  buildPiano();
+  updateScore();
+  showCurrent();
+  renderOverlay();
+}
+
+function buildPracticeGrid() {
+  const g=document.getElementById('practiceNotesGrid'); g.innerHTML='';
+  practiceNotes.forEach((entry,i)=>{
+    const c=document.createElement('div');
+    c.className='note-chip'+(entry.isChord?' chord-chip':'');
+    c.id='pnc-'+i;
+    if(entry.isChord){
+      const names=entry.notes.map(n=>{const{base}=parseNote(n);return base;}).join('+');
+      const kr=entry.label||entry.notes.map(n=>{const{base}=parseNote(n);return KR[base]||base;}).join(' ');
+      c.innerHTML=`<span class="note-name chord-name">${names}</span><span class="note-korean">${kr}</span><span class="note-octave">화음</span>`;
+    } else {
+      const {base,octave}=parseNote(entry.notes[0]);
+      const kr=entry.label||KR[base]||base;
+      c.innerHTML=`<span class="note-name">${base}</span><span class="note-korean">${kr}</span>${octave?`<span class="note-octave">Oct${octave}</span>`:''}`;
+    }
+    g.appendChild(c);
+  });
+}
+
+function showCurrent() {
+  if (practiceIndex>=practiceNotes.length) { finishPractice(); return; }
+  const entry=practiceNotes[practiceIndex];
+  chordPressed.clear();
+  clearChordTimeout();
+
+  if(entry.isChord){
+    const names=entry.notes.map(n=>{const{base}=parseNote(n);return base;}).join(' + ');
+    const kr=entry.label||entry.notes.map(n=>{const{base}=parseNote(n);return KR[base]||base;}).join(' ');
+    document.getElementById('cndNote').textContent=names;
+    document.getElementById('cndKorean').textContent=kr;
+    document.getElementById('cndSub').textContent=`화음 ${entry.notes.length}개 동시에 누르세요`;
+    // Start timeout for chord (5 seconds)
+    chordTimer = setTimeout(()=>{
+      if(!waitingForInput) return;
+      waitingForInput=false;
+      practiceWrong++;
+      practiceResults[practiceIndex]='ng';
+      feedback(false, entry.notes.join('+'));
+      clearAllTargetKeys();
+      markDot(practiceIndex,'done-ng');
+      flashChip(practiceIndex,'wrong');
+      updateScore(); renderOverlay();
+      setTimeout(()=>{ setChipDone(practiceIndex); practiceIndex++; showCurrent(); },950);
+    }, 5000);
+  } else {
+    const {base,octave}=parseNote(entry.notes[0]);
+    const kr=entry.label||KR[base]||base;
+    document.getElementById('cndNote').textContent=entry.notes[0]||'-';
+    document.getElementById('cndKorean').textContent=kr;
+    document.getElementById('cndSub').textContent=octave?`옥타브 ${octave} · 건반에서 찾아보세요`:'건반에서 이 음을 찾아 눌러보세요';
+  }
+
+  document.getElementById('cndFeedback').textContent='';
+  document.getElementById('cndFeedback').className='cnd-feedback';
+  document.getElementById('cndWrap').className='cnd-wrap';
+  document.getElementById('practicePos').textContent=`${practiceIndex+1} / ${practiceNotes.length}`;
+
+  document.querySelectorAll('[id^="pnc-"]').forEach(c=>c.classList.remove('current-target'));
+  const cc=document.getElementById('pnc-'+practiceIndex);
+  if(cc){cc.classList.add('current-target');cc.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});}
+
+  const prev=document.getElementById('npb-'+practiceIndex);
+  if(prev) prev.classList.add('current');
+
+  // Highlight all target keys (including all chord keys)
+  setAllTargetKeys(entry.notes);
+  // Auto-scroll piano to first note's octave
+  const {octave:firstOct}=parseNote(entry.notes[0]);
+  if(firstOct) autoScrollPiano(firstOct);
+  waitingForInput=true;
+}
+
+// Chord tracking state
+let chordPressed = new Set(); // normalized note bases currently held
+let chordTimer = null;
+function clearChordTimeout() { if(chordTimer){clearTimeout(chordTimer);chordTimer=null;} }
+
+function handleKeyPress(noteStr, keyEl) {
+  getAC();
+  playTone(noteStr, 0.55);
+  flashKey(keyEl,'pressed');
+
+  if (!practiceActive) return;
+  if (!waitingForInput) return;
+
+  const entry = practiceNotes[practiceIndex];
+
+  if (!entry.isChord) {
+    // ── Single note mode ──
+    const {base:tb,octave:to}=parseNote(entry.notes[0]);
+    const {base:pb,octave:po}=parseNote(noteStr);
+    const correct=normBase(tb)===normBase(pb) && (!to||!po||Math.abs(to-po)<=1);
+    waitingForInput=false;
+    if(correct){
+      practiceCorrect++; practiceResults[practiceIndex]='ok';
+      feedback(true); flashKey(keyEl,'correct-key');
+      flashChip(practiceIndex,'correct'); markDot(practiceIndex,'done-ok');
+    } else {
+      practiceWrong++; practiceResults[practiceIndex]='ng';
+      feedback(false, entry.notes[0]); flashKey(keyEl,'wrong-key');
+      flashChip(practiceIndex,'wrong'); markDot(practiceIndex,'done-ng');
+    }
+    clearAllTargetKeys();
+    updateScore(); renderOverlay();
+    setTimeout(()=>{ setChipDone(practiceIndex); practiceIndex++; showCurrent(); }, correct?600:950);
+
+  } else {
+    // ── Chord mode: accumulate pressed notes ──
+    const {base:pb, octave:po}=parseNote(noteStr);
+    const normPressed=normBase(pb);
+
+    // Check if this pressed note matches any of the chord's required notes
+    const targetNorms=entry.notes.map(n=>{const{base}=parseNote(n);return normBase(base);});
+    const isRelevant=targetNorms.includes(normPressed);
+    if(!isRelevant){
+      // Wrong key pressed — penalize and move on
+      clearChordTimeout();
+      waitingForInput=false;
+      practiceWrong++; practiceResults[practiceIndex]='ng';
+      feedback(false, entry.notes.join(' + ')); flashKey(keyEl,'wrong-key');
+      flashChip(practiceIndex,'wrong'); markDot(practiceIndex,'done-ng');
+      clearAllTargetKeys();
+      updateScore(); renderOverlay();
+      setTimeout(()=>{ setChipDone(practiceIndex); practiceIndex++; showCurrent(); },950);
+      return;
+    }
+
+    // Mark this key as correctly pressed
+    chordPressed.add(normPressed);
+    flashKey(keyEl,'correct-key');
+
+    // Update visual: dim satisfied keys on display
+    updateChordProgress(entry.notes, chordPressed);
+
+    // Check if ALL chord notes are now pressed
+    const allDone=targetNorms.every(n=>chordPressed.has(n));
+    if(allDone){
+      clearChordTimeout();
+      waitingForInput=false;
+      practiceCorrect++; practiceResults[practiceIndex]='ok';
+      feedback(true); flashChip(practiceIndex,'correct'); markDot(practiceIndex,'done-ok');
+      clearAllTargetKeys();
+      updateScore(); renderOverlay();
+      setTimeout(()=>{ setChipDone(practiceIndex); practiceIndex++; showCurrent(); },700);
+    }
+    // else: waiting for remaining chord notes
+  }
+}
+
+// Show progress of chord: already-pressed keys lose the pulsing glow, remaining still pulse
+function updateChordProgress(chordNoteStrs, pressedNorms) {
+  chordNoteStrs.forEach(noteStr=>{
+    const {base}=parseNote(noteStr);
+    const norm=normBase(base);
+    if(pressedNorms.has(norm)){
+      // Already pressed — remove target pulse, add a soft green
+      const k=document.getElementById('key-'+noteStr)||findKeyEl(noteStr);
+      if(k){ k.classList.remove('target'); k.classList.add('correct-key'); }
+    }
+  });
+  // Update the feedback sub-text
+  const remaining = chordNoteStrs
+    .filter(n=>{ const{base}=parseNote(n); return !pressedNorms.has(normBase(base)); })
+    .map(n=>{ const{base}=parseNote(n); return base; });
+  if(remaining.length>0){
+    document.getElementById('cndSub').textContent=`나머지: ${remaining.join(' + ')} 를 누르세요`;
+  }
+}
+
+function findKeyEl(noteStr) {
+  const {base,octave}=parseNote(noteStr);
+  return document.getElementById('key-'+normBase(base)+octave)||null;
+}
+
+function feedback(ok, targetNote) {
+  const el=document.getElementById('cndFeedback');
+  const wrap=document.getElementById('cndWrap');
+  if(ok){
+    el.textContent='✓ 정확해요!'; el.className='cnd-feedback ok';
+    wrap.classList.add('correct-flash');
+  } else {
+    el.textContent=`✗ 틀렸어요 — 정답: ${targetNote}`; el.className='cnd-feedback ng';
+    wrap.classList.add('wrong-flash');
+  }
+}
+
+function flashKey(el,cls) { el.classList.add(cls); setTimeout(()=>el.classList.remove(cls),450); }
+function flashChip(i,cls) {
+  const c=document.getElementById('pnc-'+i);
+  if(!c) return;
+  c.classList.remove('current-target'); c.classList.add(cls);
+  setTimeout(()=>c.classList.remove(cls),700);
+}
+function setChipDone(i) { const c=document.getElementById('pnc-'+i); if(c){c.classList.remove('current-target');c.classList.add('done');} }
+function markDot(i,cls) { const d=document.getElementById('npb-'+i); if(d){d.classList.remove('current');d.className='npb-dot '+cls;} }
+function updateScore() {
+  document.getElementById('scoreTotal').textContent=practiceIndex;
+  document.getElementById('scoreCorrect').textContent=practiceCorrect;
+  document.getElementById('scoreWrong').textContent=practiceWrong;
+}
+
+function playHint() {
+  if(!practiceActive||practiceIndex>=practiceNotes.length) return;
+  const entry=practiceNotes[practiceIndex];
+  entry.notes.forEach(n=>playTone(n,1.0,0.35));
+  // Flash all target keys
+  entry.notes.forEach(n=>{
+    const k=document.getElementById('key-'+n)||findKeyEl(n);
+    if(k){k.classList.add('pressed');setTimeout(()=>k.classList.remove('pressed'),700);}
+  });
+}
+
+function skipNote() {
+  if(!practiceActive||practiceIndex>=practiceNotes.length) return;
+  clearChordTimeout();
+  waitingForInput=false; chordPressed.clear();
+  practiceResults[practiceIndex]='skip';
+  practiceWrong++;
+  markDot(practiceIndex,'done-ng');
+  setChipDone(practiceIndex);
+  clearAllTargetKeys();
+  updateScore(); renderOverlay();
+  practiceIndex++;
+  showCurrent();
+}
+
+function restartPractice() { chordPressed.clear(); clearChordTimeout(); initPractice(); document.getElementById('resultFinish').classList.remove('visible'); }
+
+function endPractice() {
+  practiceActive=false; waitingForInput=false;
+  chordPressed.clear(); clearChordTimeout();
+  document.getElementById('practiceSection').classList.remove('visible');
+  document.getElementById('pianoSection').classList.remove('visible');
+  document.getElementById('micSection').classList.remove('visible');
+  document.getElementById('practiceEmpty').style.display='';
+  clearAllTargetKeys();
+}
+
+function finishPractice() {
+  practiceActive=false; waitingForInput=false;
+  chordPressed.clear(); clearChordTimeout();
+  clearAllTargetKeys();
+  const total=practiceNotes.length;
+  const pct=total>0?Math.round((practiceCorrect/total)*100):0;
+  document.getElementById('finishScore').textContent=pct+'%';
+  const msgs=['🎹 처음엔 누구나 어렵답니다. 다시 도전해 봐요!','💪 좋은 시작이에요! 계속 연습해 봐요.','👏 잘 하셨어요! 조금만 더 연습하면 완벽해요.','🎉 훌륭한 연주입니다! 거의 완벽해요!'];
+  const msgI=pct>=90?3:pct>=70?2:pct>=50?1:0;
+  document.getElementById('finishMsg').textContent=`정확도 ${pct}% · 정확 ${practiceCorrect}개 / 전체 ${total}개\n${msgs[msgI]}`;
+  document.getElementById('resultFinish').classList.add('visible');
+}
+
+// ═══════════════════════════════
+// SHEET OVERLAY
+// ═══════════════════════════════
+function renderOverlay() {
+  const canvas=document.getElementById('overlayCanvas');
+  const img=document.getElementById('practiceSheetImg');
+  if(!canvas||!img||!img.offsetWidth) return;
+  canvas.width=img.offsetWidth; canvas.height=img.offsetHeight;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(!practiceNotes.length) return;
+
+  const total=practiceNotes.length;
+  const progress=practiceIndex/total;
+
+  // Bottom progress bar
+  const bh=7;
+  ctx.fillStyle='rgba(0,0,0,0.35)';
+  ctx.fillRect(0,canvas.height-bh,canvas.width,bh);
+  if(progress>0){
+    const grad=ctx.createLinearGradient(0,0,canvas.width,0);
+    grad.addColorStop(0,'rgba(90,180,232,0.85)');
+    grad.addColorStop(1,'rgba(78,203,141,0.85)');
+    ctx.fillStyle=grad;
+    ctx.fillRect(0,canvas.height-bh,canvas.width*progress,bh);
+  }
+
+  // Past note dots
+  for(let i=0;i<practiceIndex;i++){
+    if(!practiceResults[i]) continue;
+    const x=((i+0.5)/total)*canvas.width;
+    const y=canvas.height-bh-10;
+    ctx.beginPath();
+    ctx.arc(x,y,4,0,Math.PI*2);
+    ctx.fillStyle=practiceResults[i]==='ok'?'rgba(78,203,141,0.85)':'rgba(232,90,90,0.8)';
+    ctx.fill();
+  }
+
+  // Current note arrow
+  if(practiceIndex<total){
+    const x=((practiceIndex+0.5)/total)*canvas.width;
+    const cy=canvas.height*0.42;
+
+    // Glow
+    ctx.save();
+    ctx.shadowColor='rgba(90,180,232,0.7)';
+    ctx.shadowBlur=10;
+    ctx.strokeStyle='rgba(90,180,232,0.9)';
+    ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.moveTo(x,cy-34); ctx.lineTo(x,cy-14); ctx.stroke();
+    ctx.fillStyle='rgba(90,180,232,0.9)';
+    ctx.beginPath(); ctx.moveTo(x,cy-10); ctx.lineTo(x-8,cy-22); ctx.lineTo(x+8,cy-22); ctx.closePath(); ctx.fill();
+    ctx.restore();
+
+    // Note name badge
+    const entry2=practiceNotes[practiceIndex];
+    const txt=entry2.isChord
+      ? entry2.notes.map(n=>{const{base}=parseNote(n);return base;}).join('+')
+      : (entry2.notes[0]||'');
+    const bw=Math.max(50, txt.length*8+14), bh2=20, bx=x-bw/2, by=cy-58;
+    ctx.save();
+    ctx.fillStyle='rgba(90,180,232,0.92)';
+    roundRect(ctx,bx,by,bw,bh2,5);
+    ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.font='bold 12px sans-serif';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText(txt,x,by+bh2/2);
+    ctx.restore();
+
+    // Korean label
+    const entry3=practiceNotes[practiceIndex];
+    const kr=entry3.label||(entry3.isChord
+      ? entry3.notes.map(n=>{const{base}=parseNote(n);return KR[base]||base;}).join(' ')
+      : (()=>{const{base}=parseNote(entry3.notes[0]);return KR[base]||'';})());
+    if(kr){
+      ctx.save();
+      ctx.font='bold 11px sans-serif';
+      ctx.fillStyle='rgba(245,200,66,0.95)';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.shadowColor='rgba(0,0,0,0.6)'; ctx.shadowBlur=3;
+      ctx.fillText(kr,x,cy-62+2);
+      ctx.restore();
+    }
+  }
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
+}
+
+window.addEventListener('resize',()=>{ if(practiceActive) renderOverlay(); });
+document.getElementById('practiceSheetImg').onload=()=>renderOverlay();
+
+// ═══════════════════════════════
+// PIANO KEYBOARD
+// ═══════════════════════════════
+function buildPiano() {
+  const container=document.getElementById('pianoKeys');
+  container.innerHTML='';
+  const octs=SHOWN_OCTS.map(o=>o+octaveShift);
+  document.getElementById('octDisplay').textContent=`옥타브 ${octs[0]}-${octs[octs.length-1]}`;
+
+  let wi=0;
+  octs.forEach(oct=>{
+    WHITE_NOTES.forEach((note,ni)=>{
+      const full=note+oct;
+      const wk=document.createElement('div');
+      wk.className='wkey'; wk.dataset.note=full; wk.id='key-'+full;
+      wk.innerHTML=`<span class="key-label" id="kl-${full}">${note}${oct}</span>`;
+      wk.onmousedown=()=>handleKeyPress(full,wk);
+      wk.ontouchstart=e=>{e.preventDefault();handleKeyPress(full,wk);};
+      container.appendChild(wk);
+
+      if(BLACK_AFTER[note]){
+        const bn=BLACK_AFTER[note]+oct;
+        const bk=document.createElement('div');
+        bk.className='bkey'; bk.dataset.note=bn; bk.id='key-'+bn;
+        bk.style.left=((wi*42)+42-14)+'px';
+        bk.innerHTML=`<span class="key-label" id="kl-${bn}">${BLACK_AFTER[note]}</span>`;
+        bk.onmousedown=e=>{e.stopPropagation();handleKeyPress(bn,bk);};
+        bk.ontouchstart=e=>{e.preventDefault();e.stopPropagation();handleKeyPress(bn,bk);};
+        container.appendChild(bk);
+      }
+      wi++;
+    });
+  });
+
+  // Re-highlight target if in practice
+  if(practiceActive&&practiceIndex<practiceNotes.length) setTargetKey(practiceNotes[practiceIndex].note);
+}
+
+// Highlight multiple target keys (for chords)
+function setAllTargetKeys(noteStrs) {
+  clearAllTargetKeys();
+  (noteStrs||[]).forEach(noteStr=>{
+    if(!noteStr||noteStr==='REST') return;
+    const k=document.getElementById('key-'+noteStr)||findKeyByAlias(noteStr);
+    if(k){
+      k.classList.add('target');
+      const l=k.querySelector('.key-label'); if(l) l.classList.add('tl');
+    }
+  });
+}
+
+function clearAllTargetKeys() {
+  document.querySelectorAll('.wkey.target,.bkey.target').forEach(k=>{
+    k.classList.remove('target');
+    const l=k.querySelector('.key-label'); if(l) l.classList.remove('tl');
+  });
+}
+
+function findKeyByAlias(noteStr) {
+  const {base,octave}=parseNote(noteStr);
+  if(!octave) return null;
+  return document.getElementById('key-'+normBase(base)+octave)||null;
+}
+
+// Keep old setTargetKey as single-note shim
+function setTargetKey(noteStr) { setAllTargetKeys(noteStr?[noteStr]:[]); }
+
+function autoScrollPiano(octave) {
+  if(!octave) return;
+  const octs=SHOWN_OCTS.map(o=>o+octaveShift);
+  if(octave<octs[0]||octave>octs[octs.length-1]){
+    const mid=Math.round((SHOWN_OCTS[0]+SHOWN_OCTS[SHOWN_OCTS.length-1])/2);
+    octaveShift=octave-mid;
+    buildPiano();
+  }
+}
+
+function shiftOctave(d) {
+  const newS=octaveShift+d;
+  if(SHOWN_OCTS[0]+newS<1||SHOWN_OCTS[SHOWN_OCTS.length-1]+newS>7) return;
+  octaveShift=newS;
+  buildPiano();
+}
+
+// ═══════════════════════════════
+// KEYBOARD INPUT
+// ═══════════════════════════════
+const KB_W=['a','s','d','f','g','h','j','k','l'];
+const KB_B={'w':'C#','e':'D#','t':'F#','y':'G#','u':'A#'};
+const pressedKB=new Set();
+
+document.addEventListener('keydown',e=>{
+  if(e.repeat||['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+  const octs=SHOWN_OCTS.map(o=>o+octaveShift);
+  const allW=[]; octs.forEach(o=>WHITE_NOTES.forEach(n=>allW.push(n+o)));
+  const wi=KB_W.indexOf(e.key.toLowerCase());
+  let note=wi>=0&&wi<allW.length?allW[wi]:null;
+  if(KB_B[e.key.toLowerCase()]) note=KB_B[e.key.toLowerCase()]+octs[0];
+  if(note&&!pressedKB.has(note)){
+    pressedKB.add(note);
+    const k=document.getElementById('key-'+note);
+    if(k) handleKeyPress(note,k);
+    else { getAC(); playTone(note,0.5); }
+  }
+});
+document.addEventListener('keyup',e=>{
+  const octs=SHOWN_OCTS.map(o=>o+octaveShift);
+  const allW=[]; octs.forEach(o=>WHITE_NOTES.forEach(n=>allW.push(n+o)));
+  const wi=KB_W.indexOf(e.key.toLowerCase());
+  let note=wi>=0?allW[wi]:null;
+  if(KB_B[e.key.toLowerCase()]) note=KB_B[e.key.toLowerCase()]+octs[0];
+  if(note) pressedKB.delete(note);
+});
+
+// ═══════════════════════════════
+// UTILS
+// ═══════════════════════════════
+
+// ═══════════════════════════════════════════════════════
+// 🎙 MICROPHONE PITCH DETECTION ENGINE
+// 원리: Web Audio API → AnalyserNode → FFT(32768pt) →
+//       주파수 피크 탐지 → 포물선 보간으로 정밀도 향상 →
+//       미리 계산된 전체 음 주파수 테이블과 대조 → 최근접 음 매핑
+// ═══════════════════════════════════════════════════════
+
+let micStream = null;
+let micAudioCtx = null;
+let micAnalyser = null;
+let micSource = null;
+let micActive = false;
+let micAnimId = null;
+let micMode = 'auto'; // 'auto' | 'manual' | 'free'
+
+// ── 전체 음 주파수 테이블 (C1~B7, 84개) ──
+const ALL_NOTES = [];
+const NOTE_NAMES_CHROMATIC = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+for (let oct = 1; oct <= 7; oct++) {
+  NOTE_NAMES_CHROMATIC.forEach((name, semitone) => {
+    const midi = (oct + 1) * 12 + semitone;
+    const freq = 440 * Math.pow(2, (midi - 69) / 12);
+    ALL_NOTES.push({ name: name + oct, base: name, octave: oct, freq, midi });
+  });
+}
+// 역방향 조회: 주파수 → 음 (정렬된 배열로 이진탐색)
+ALL_NOTES.sort((a, b) => a.freq - b.freq);
+
+// 주어진 주파수에서 가장 가까운 음 찾기 (이진탐색)
+function freqToNote(freq) {
+  if (freq <= 0) return null;
+  let lo = 0, hi = ALL_NOTES.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (ALL_NOTES[mid].freq < freq) lo = mid + 1;
+    else hi = mid;
+  }
+  // lo와 lo-1 중 더 가까운 것
+  const cand = [lo - 1, lo].filter(i => i >= 0 && i < ALL_NOTES.length);
+  let best = null, bestDist = Infinity;
+  cand.forEach(i => {
+    const dist = Math.abs(ALL_NOTES[i].freq - freq);
+    if (dist < bestDist) { bestDist = dist; best = ALL_NOTES[i]; }
+  });
+  // 신뢰도: 반음 거리로 계산 (0~1, 1이 완벽)
+  const semitoneDist = Math.abs(12 * Math.log2(freq / best.freq));
+  const confidence = Math.max(0, 1 - semitoneDist * 2);
+  return { ...best, confidence, detectedFreq: freq };
+}
+
+// ── YIN-inspired 자기상관 + FFT 피크 검출 ──
+// FFT로 dominant frequency를 찾은 후 포물선 보간으로 정밀도를 높임
+function detectPitch(analyser) {
+  const bufLen = analyser.frequencyBinCount; // fftSize/2
+  const freqData = new Float32Array(bufLen);
+  analyser.getFloatFrequencyData(freqData); // dB values
+
+  const sampleRate = micAudioCtx.sampleRate;
+  const sensitivity = parseInt(document.getElementById('sensSlider').value);
+  const threshold = -100 + sensitivity * 6; // -94 ~ -40 dB
+
+  // 피아노 음역대: C2(65Hz) ~ C7(2093Hz) 만 탐색
+  const minFreq = 60, maxFreq = 2200;
+  const minBin = Math.floor(minFreq * bufLen / (sampleRate / 2));
+  const maxBin = Math.ceil(maxFreq * bufLen / (sampleRate / 2));
+
+  // 1단계: 전체 음량 체크 — 너무 조용하면 무시
+  let maxDb = -Infinity;
+  for (let i = minBin; i < maxBin; i++) {
+    if (freqData[i] > maxDb) maxDb = freqData[i];
+  }
+  if (maxDb < threshold) return null;
+
+  // 2단계: 피크 찾기 (지역 최댓값 중 가장 강한 것)
+  let peakBin = -1, peakDb = -Infinity;
+  for (let i = minBin + 1; i < maxBin - 1; i++) {
+    if (freqData[i] > freqData[i-1] && freqData[i] > freqData[i+1]) {
+      if (freqData[i] > peakDb) { peakDb = freqData[i]; peakBin = i; }
+    }
+  }
+  if (peakBin < 0) return null;
+
+  // 3단계: 포물선 보간 — 3점으로 정확한 피크 주파수 추정
+  const alpha = freqData[peakBin - 1];
+  const beta  = freqData[peakBin];
+  const gamma = freqData[peakBin + 1];
+  const denom = alpha - 2 * beta + gamma;
+  const offset = denom !== 0 ? 0.5 * (alpha - gamma) / denom : 0;
+  const preciseBin = peakBin + offset;
+  const preciseFreq = preciseBin * sampleRate / (bufLen * 2);
+
+  return { freq: preciseFreq, db: peakDb };
+}
+
+// ── 노이즈 제거: 연속 N프레임 같은 음이 감지돼야 확정 ──
+let micNoteBuffer = [];
+const MIC_CONFIRM_FRAMES = 3; // 연속 3프레임 = ~90ms
+let lastConfirmedNote = null;
+let lastTriggerTime = 0;
+const MIN_TRIGGER_INTERVAL = 350; // ms — 같은 음 최소 간격
+
+function processMicFrame() {
+  if (!micActive || !micAnalyser) return;
+
+  // 시각화
+  drawMicViz();
+
+  const result = detectPitch(micAnalyser);
+
+  if (!result) {
+    micNoteBuffer = [];
+    updateMicDisplay(null, 0);
+    micAnimId = requestAnimationFrame(processMicFrame);
+    return;
+  }
+
+  const noteInfo = freqToNote(result.freq);
+  if (!noteInfo || noteInfo.confidence < 0.35) {
+    micNoteBuffer = [];
+    updateMicDisplay(null, 0);
+    micAnimId = requestAnimationFrame(processMicFrame);
+    return;
+  }
+
+  // 버퍼에 추가
+  micNoteBuffer.push(noteInfo.name);
+  if (micNoteBuffer.length > MIC_CONFIRM_FRAMES + 2) micNoteBuffer.shift();
+
+  // 연속 N프레임 동일 음 확인
+  const recentN = micNoteBuffer.slice(-MIC_CONFIRM_FRAMES);
+  const allSame = recentN.length === MIC_CONFIRM_FRAMES && recentN.every(n => n === recentN[0]);
+
+  // UI 업데이트 (확정 전에도 표시)
+  updateMicDisplay(noteInfo, noteInfo.confidence);
+
+  if (allSame) {
+    const now = Date.now();
+    const isSameAsLast = lastConfirmedNote === noteInfo.name;
+    const tooSoon = (now - lastTriggerTime) < MIN_TRIGGER_INTERVAL;
+
+    if (!isSameAsLast || !tooSoon) {
+      lastConfirmedNote = noteInfo.name;
+      lastTriggerTime = now;
+      micNoteBuffer = []; // 버퍼 리셋
+
+      // 건반 시각 피드백
+      const keyEl = document.getElementById('key-' + noteInfo.name)
+                 || findKeyByAlias(noteInfo.name);
+      if (keyEl) flashKey(keyEl, 'pressed');
+
+      // 모드별 처리
+      if (micMode === 'free') {
+        // 자유 연주: 그냥 소리만 (이미 실제 피아노 소리가 나므로 앱 소리는 안 냄)
+        showMicDetectedFeedback(noteInfo);
+      } else {
+        // 연습 모드 연결
+        onMicNoteDetected(noteInfo);
+      }
+    }
+  }
+
+  micAnimId = requestAnimationFrame(processMicFrame);
+}
+
+function onMicNoteDetected(noteInfo) {
+  if (micMode === 'free') return;
+
+  if (!practiceActive || !waitingForInput) return;
+
+  // handleKeyPress와 동일한 로직 — 가상 keyEl 전달
+  const fakeEl = document.getElementById('key-' + noteInfo.name)
+              || { classList: { add() {}, remove() {} }, querySelector() { return null; } };
+
+  if (micMode === 'auto') {
+    handleKeyPress(noteInfo.name, fakeEl);
+  } else if (micMode === 'manual') {
+    // 수동 확인 모드: 감지된 음 표시 후 사용자가 OK/NG 선택
+    showManualConfirm(noteInfo, fakeEl);
+  }
+}
+
+// 자유 연주 모드에서 감지된 음 표시
+function showMicDetectedFeedback(noteInfo) {
+  const { base } = parseNote(noteInfo.name);
+  const kr = KR[base] || base;
+  document.getElementById('cndNote').textContent = noteInfo.name;
+  document.getElementById('cndKorean').textContent = kr;
+  document.getElementById('cndSub').textContent = `${noteInfo.detectedFreq.toFixed(1)} Hz 감지됨`;
+}
+
+// 수동 확인 모드
+let manualPending = null;
+function showManualConfirm(noteInfo, keyEl) {
+  manualPending = { noteInfo, keyEl };
+  document.getElementById('cndFeedback').textContent =
+    `🎙 ${noteInfo.name} 감지 — 맞으면 ✓ 틀리면 ✗`;
+  document.getElementById('cndFeedback').className = 'cnd-feedback';
+  // 3초 후 자동으로 수락
+  setTimeout(() => {
+    if (manualPending && manualPending.noteInfo.name === noteInfo.name) {
+      handleKeyPress(noteInfo.name, keyEl);
+      manualPending = null;
+    }
+  }, 3000);
+}
+
+// ── 마이크 시각화 (파형 + 감지 표시) ──
+function drawMicViz() {
+  const canvas = document.getElementById('micVizCanvas');
+  if (!canvas || !micAnalyser) return;
+  const W = canvas.offsetWidth || 300;
+  const H = canvas.offsetHeight || 48;
+  if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  const bufLen = micAnalyser.frequencyBinCount;
+  const freqData = new Uint8Array(bufLen);
+  micAnalyser.getByteFrequencyData(freqData);
+
+  // 피아노 범위만 시각화 (60Hz~2200Hz)
+  const sampleRate = micAudioCtx.sampleRate;
+  const minBin = Math.floor(60 * bufLen / (sampleRate / 2));
+  const maxBin = Math.ceil(2200 * bufLen / (sampleRate / 2));
+  const range = maxBin - minBin;
+
+  // 배경
+  ctx.fillStyle = 'rgba(14,14,16,0.0)';
+  ctx.fillRect(0, 0, W, H);
+
+  // 스펙트럼 바
+  const barW = Math.max(1, W / range);
+  for (let i = 0; i < range; i++) {
+    const val = freqData[minBin + i] / 255;
+    const barH = val * H;
+    const hue = 140 + val * 60; // 초록~노랑
+    ctx.fillStyle = `hsla(${hue},80%,55%,${0.4 + val * 0.6})`;
+    ctx.fillRect(i * barW, H - barH, barW - 0.5, barH);
+  }
+}
+
+// ── UI 업데이트 ──
+function updateMicDisplay(noteInfo, confidence) {
+  const dot = document.getElementById('micDot');
+  const bigNote = document.getElementById('micNoteBig');
+  const noteKr = document.getElementById('micNoteKr');
+  const noteFreq = document.getElementById('micNoteFreq');
+  const confFill = document.getElementById('micConfFill');
+  const statusText = document.getElementById('micStatusText');
+
+  if (!noteInfo) {
+    dot.className = 'mic-dot listening';
+    bigNote.textContent = '—';
+    noteKr.textContent = '소리 대기중';
+    noteFreq.textContent = '';
+    confFill.style.width = '0%';
+    statusText.innerHTML = '<strong>듣는 중</strong> — 피아노를 연주해 보세요';
+    return;
+  }
+
+  const { base } = parseNote(noteInfo.name);
+  const kr = KR[base] || base;
+  const pct = Math.round(confidence * 100);
+
+  dot.className = 'mic-dot detecting';
+  bigNote.textContent = noteInfo.name;
+  noteKr.textContent = kr;
+  noteFreq.textContent = `${noteInfo.detectedFreq.toFixed(1)} Hz`;
+  confFill.style.width = pct + '%';
+  statusText.innerHTML = `<strong>${noteInfo.name}</strong> 감지 — 신뢰도 ${pct}%`;
+}
+
+// ── 마이크 ON/OFF ──
+async function toggleMic() {
+  if (micActive) {
+    stopMic();
+  } else {
+    await startMic();
+  }
+}
+
+async function startMic() {
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: false,  // 피아노 소리 왜곡 방지
+        noiseSuppression: false,
+        autoGainControl: false,
+        sampleRate: 44100
+      }
+    });
+
+    micAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 });
+    micAnalyser = micAudioCtx.createAnalyser();
+    micAnalyser.fftSize = 32768;         // 최대 해상도 — 주파수 정밀도 극대화
+    micAnalyser.smoothingTimeConstant = 0.6;  // 너무 빠른 변화 완화
+    micAnalyser.minDecibels = -100;
+    micAnalyser.maxDecibels = -10;
+
+    micSource = micAudioCtx.createMediaStreamSource(micStream);
+    micSource.connect(micAnalyser);
+    // 스피커로는 연결 안 함 (하울링 방지)
+
+    micActive = true;
+    micNoteBuffer = [];
+    lastConfirmedNote = null;
+
+    document.getElementById('micToggleBtn').textContent = '⏹ 마이크 중지';
+    document.getElementById('micToggleBtn').classList.add('active');
+    document.getElementById('micDot').className = 'mic-dot listening';
+    document.getElementById('micStatusText').innerHTML = '<strong>듣는 중</strong> — 피아노를 연주해 보세요';
+
+    processMicFrame();
+
+  } catch (err) {
+    const msg = err.name === 'NotAllowedError'
+      ? '마이크 권한이 거부됐습니다. 브라우저 설정에서 허용해 주세요.'
+      : '마이크를 사용할 수 없습니다: ' + err.message;
+    document.getElementById('micStatusText').innerHTML = `⚠️ ${msg}`;
+  }
+}
+
+function stopMic() {
+  micActive = false;
+  if (micAnimId) { cancelAnimationFrame(micAnimId); micAnimId = null; }
+  if (micSource) { micSource.disconnect(); micSource = null; }
+  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  if (micAudioCtx) { micAudioCtx.close(); micAudioCtx = null; }
+  micAnalyser = null;
+  micNoteBuffer = [];
+
+  document.getElementById('micToggleBtn').textContent = '🎙 마이크 시작';
+  document.getElementById('micToggleBtn').classList.remove('active');
+  document.getElementById('micDot').className = 'mic-dot';
+  document.getElementById('micStatusText').textContent = '마이크 중지됨';
+  updateMicDisplay(null, 0);
+
+  // 캔버스 지우기
+  const canvas = document.getElementById('micVizCanvas');
+  if (canvas) { const c = canvas.getContext('2d'); c.clearRect(0,0,canvas.width,canvas.height); }
+}
+
+function setMicMode(mode) {
+  micMode = mode;
+  ['auto','manual','free'].forEach(m => {
+    const btn = document.getElementById('modeBtn' + m.charAt(0).toUpperCase() + m.slice(1));
+    if (btn) btn.classList.toggle('active', m === mode);
+  });
+  const modeDesc = { auto:'🤖 자동: 감지되면 즉시 채점', manual:'✋ 수동: 감지 후 3초 대기', free:'🎹 자유: 악보 진행 없이 자유 연주' };
+  document.getElementById('micStatusText').textContent = modeDesc[mode] || '';
+}
+
+// 감도 슬라이더
+document.getElementById('sensSlider').oninput = function() {
+  document.getElementById('sensVal').textContent = this.value;
+};
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function showError(msg){const el=document.getElementById('errorCard');el.textContent='⚠️ '+msg;el.classList.add('visible');}
+function hideError(){document.getElementById('errorCard').classList.remove('visible');}
+
+</script>
+</body>
+</html>
