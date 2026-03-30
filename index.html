@@ -563,7 +563,6 @@ body::before { content:''; position:fixed; inset:0; background: radial-gradient(
 let uploadedImageBase64 = null;
 let uploadedMediaType = 'image/jpeg';
 let parsedNotes = [];
-let audioCtx = null;
 let isPlaying = false;
 let stopRequested = false;
 let userApiKey = '';
@@ -649,44 +648,72 @@ function parseNote(str) {
 function normBase(b) { return ALIASES[b]||b; }
 
 // ═══════════════════════════════
-// AUDIO
-// ═══════════════════════════════
+// ═══════════════════════════════════════════════
+// 🔊 오디오 엔진
+// ═══════════════════════════════════════════════
+let _actx = null;
+
 function getAC() {
-  if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  return audioCtx;
+  if (!_actx || _actx.state === 'closed') {
+    _actx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (_actx.state === 'suspended') _actx.resume();
+  return _actx;
 }
 
-// 사용자 제스처가 있는 시점에 AudioContext를 미리 활성화
+// 클릭/터치마다 resume 시도
 function unlockAudio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+  try { const c = getAC(); if (c.state === 'suspended') c.resume(); } catch(e) {}
 }
-// 페이지 첫 터치/클릭 시 잠금 해제
-document.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
-document.addEventListener('mousedown', unlockAudio, { once: true });
-function playTone(noteStr, dur=0.6, vol=0.3) {
-  const freq = NOTE_FREQ[noteStr] || 0;
-  if (!freq) return;
-  // NaN / 0 / 음수 방어
-  const safeDur = (isNaN(dur) || dur <= 0) ? 0.6 : dur;
-  const ctx = getAC();
-  if (!ctx || ctx.state === 'closed') return;
-  const g = ctx.createGain();
-  g.connect(ctx.destination);
-  g.gain.setValueAtTime(0, ctx.currentTime);
-  g.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.012);
-  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + Math.max(0.1, safeDur * 0.93));
-  [1,2,3,4].forEach((h,i) => {
-    const o = ctx.createOscillator(), hg = ctx.createGain();
-    o.type = i === 0 ? 'triangle' : 'sine';
-    o.frequency.value = freq * h;
-    hg.gain.value = [0.6, 0.2, 0.1, 0.05][i];
-    o.connect(hg); hg.connect(g);
-    o.start(ctx.currentTime);
-    o.stop(ctx.currentTime + Math.max(0.1, safeDur * 0.93));
-  });
+document.addEventListener('click', unlockAudio);
+document.addEventListener('touchstart', unlockAudio, { passive: true });
+
+function playTone(noteStr, durSec, vol) {
+  if (!noteStr || noteStr === 'REST') return;
+  const freq = NOTE_FREQ[noteStr];
+  if (!freq || isNaN(freq) || freq <= 0) return;
+
+  const d = (!durSec || isNaN(durSec) || durSec <= 0) ? 0.5 : durSec;
+  const v = (!vol || isNaN(vol)) ? 0.35 : vol;
+
+  let ctx;
+  try { ctx = getAC(); } catch(e) { return; }
+
+  try {
+    const t = ctx.currentTime;
+
+    // 메인 gain
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(v, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    gain.connect(ctx.destination);
+
+    // 기본음
+    const osc = ctx.createOscillator();
+    osc.frequency.value = freq;
+    osc.type = 'sine';
+    osc.connect(gain);
+    osc.start(t);
+    osc.stop(t + d);
+
+    // 2배음 (음색용)
+    const osc2 = ctx.createOscillator();
+    const g2 = ctx.createGain();
+    osc2.frequency.value = freq * 2;
+    osc2.type = 'sine';
+    g2.gain.value = 0.15;
+    osc2.connect(g2);
+    g2.connect(ctx.destination);
+    osc2.start(t);
+    osc2.stop(t + d * 0.7);
+  } catch(e) {
+    console.warn('playTone err:', noteStr, e.message);
+  }
 }
+
+// 기존 코드 호환용 alias
+function getAudioContext() { return getAC(); }
+
 
 // ═══════════════════════════════
 // TABS
@@ -958,15 +985,10 @@ async function playAll() {
   // 재생 탭으로 전환 (tempoSlider DOM 보장)
   switchTab('playback');
 
-  // AudioContext 잠금 해제 (모바일 필수)
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') await audioCtx.resume();
-  // iOS Safari 추가 잠금 해제
-  const unlockBuf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
-  const unlockSrc = audioCtx.createBufferSource();
-  unlockSrc.buffer = unlockBuf;
-  unlockSrc.connect(audioCtx.destination);
-  unlockSrc.start(0);
+  // AudioContext 잠금 해제
+  unlockAudio();
+  const _ctx = getAC();
+  if (_ctx.state === 'suspended') await _ctx.resume();
 
   stopRequested=false; isPlaying=true;
   document.getElementById('playAllBtn').disabled=true;
