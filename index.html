@@ -1027,7 +1027,7 @@ function buildGrid(id, notes, cb) {
     } else {
       const {base,octave}=parseNote(entry.notes[0]);
       const kr=entry.label||KR[base]||base;
-      c.innerHTML=`<span class="note-name">${base}</span><span class="note-korean">${kr}</span>${octave?`<span class="note-octave">Oct${octave}</span>`:''}`;
+      c.innerHTML='<span class="note-name">'+base+'</span><span class="note-korean">'+kr+'</span>'+(octave?'<span class="note-octave">Oct'+octave+'</span>':'');
     }
     c.onclick=()=>cb(i); g.appendChild(c);
   });
@@ -1154,7 +1154,7 @@ function buildPracticeGrid() {
     } else {
       const {base,octave}=parseNote(entry.notes[0]);
       const kr=entry.label||KR[base]||base;
-      c.innerHTML=`<span class="note-name">${base}</span><span class="note-korean">${kr}</span>${octave?`<span class="note-octave">Oct${octave}</span>`:''}`;
+      c.innerHTML='<span class="note-name">'+base+'</span><span class="note-korean">'+kr+'</span>'+(octave?'<span class="note-octave">Oct'+octave+'</span>':'');
     }
     g.appendChild(c);
   });
