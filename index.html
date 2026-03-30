@@ -897,17 +897,10 @@ function normBase(b) { return ALIASES[b]||b; }
 
 // ═══════════════════════════════
 // ═══════════════════════════════════════════════
-// 🔊 오디오 엔진
+// 🔊 오디오 엔진 — 단순 확실한 버전
 // ═══════════════════════════════════════════════
-// ═══════════════════════════════════════
-// 🔊 오디오 엔진 (완전 독립형)
-// ═══════════════════════════════════════
-// ═══════════════════════════════════════════════
-// 🔊 오디오 엔진 (확실한 버전)
-// ═══════════════════════════════════════════════
-let _ctx = null;  // 단일 AudioContext 인스턴스
+let _ctx = null;
 
-// AudioContext 반환 — 없으면 생성, suspended면 resume
 function getAC() {
   if (!_ctx || _ctx.state === 'closed') {
     _ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -915,75 +908,49 @@ function getAC() {
   return _ctx;
 }
 
-// 사용자 제스처 시 호출 — resume Promise 반환
-async function unlockAudio() {
+async function resumeAC() {
   const ctx = getAC();
-  if (ctx.state === 'suspended') {
-    await ctx.resume();
-  }
+  if (ctx.state === 'suspended') await ctx.resume();
   return ctx;
 }
 
-// 클릭/터치마다 unlock 시도
-document.addEventListener('click',      function() { unlockAudio(); });
-document.addEventListener('touchstart', function() { unlockAudio(); }, { passive: true });
+// 클릭마다 resume 시도
+document.addEventListener('click',      function(){ getAC(); if(_ctx.state==='suspended') _ctx.resume(); });
+document.addEventListener('touchstart', function(){ getAC(); if(_ctx.state==='suspended') _ctx.resume(); }, {passive:true});
 
-// 단일 음 재생
 function playTone(noteStr, durSec, vol) {
   if (!noteStr || noteStr === 'REST') return;
   const freq = NOTE_FREQ[noteStr];
   if (!freq || isNaN(freq)) return;
-
-  const d = (durSec && durSec > 0 && isFinite(durSec)) ? durSec : 0.5;
-  const v = (vol && vol > 0 && isFinite(vol)) ? vol : 0.4;
-
+  const d = (durSec > 0 && isFinite(durSec)) ? durSec : 0.5;
+  const v = (vol > 0 && isFinite(vol)) ? vol : 0.4;
   const ctx = getAC();
-  // ctx가 running이 아니면 소리 안 남 — 여기까지 오면 이미 running이어야 함
-  if (ctx.state !== 'running') {
-    ctx.resume();
-    // resume이 비동기라 즉시 적용 안 될 수 있음
-    // 다음 클릭에서는 running 상태로 정상 재생됨
-  }
-
   try {
-    const now = ctx.currentTime;
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(v, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + d);
-    gain.connect(ctx.destination);
-
-    const osc = ctx.createOscillator();
-    osc.type = 'triangle';
-    osc.frequency.value = freq;
-    osc.connect(gain);
-    osc.start(now);
-    osc.stop(now + d);
-
-    // 2배음
-    const osc2 = ctx.createOscillator();
-    const g2   = ctx.createGain();
-    osc2.type = 'sine';
-    osc2.frequency.value = freq * 2;
-    g2.gain.value = v * 0.25;
-    osc2.connect(g2);
-    g2.connect(ctx.destination);
-    osc2.start(now);
-    osc2.stop(now + d * 0.6);
-  } catch(e) {
-    console.warn('playTone error:', noteStr, e);
-  }
+    const t = ctx.currentTime;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(v, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + d);
+    g.connect(ctx.destination);
+    const o = ctx.createOscillator();
+    o.type = 'triangle'; o.frequency.value = freq;
+    o.connect(g); o.start(t); o.stop(t + d);
+    const o2 = ctx.createOscillator();
+    const g2 = ctx.createGain();
+    o2.type = 'sine'; o2.frequency.value = freq * 2; g2.gain.value = v * 0.2;
+    o2.connect(g2); g2.connect(ctx.destination);
+    o2.start(t); o2.stop(t + d * 0.7);
+  } catch(e) { console.warn('playTone:', e.message); }
 }
 
-// AUDIO 객체 (기존 코드 호환용)
-const AUDIO = {
-  play(noteStr, durSec, vol) { playTone(noteStr, durSec, vol); },
-  unlock()                   { return unlockAudio(); },
-  get()                      { return getAC(); }
-};
-
-function getAudioContext() { return getAC(); }
-
-
+// ── 탭 전환 ──
+function switchTab(tab) {
+  ['analyze','playback','practice'].forEach((t, i) => {
+    const panel = document.getElementById('tab-'+t);
+    const btn   = document.querySelectorAll('.tab-btn')[i];
+    if (panel) panel.classList.toggle('active', t === tab);
+    if (btn)   btn.classList.toggle('active',   t === tab);
+  });
+}
 
 // ═══════════════════════════════
 // UPLOAD
@@ -1278,56 +1245,36 @@ document.getElementById('tempoSlider').oninput=()=>{
 async function playAll() {
   if (!parsedNotes.length) return;
 
-  // ★ 사용자 제스처(클릭) 시점에 즉시 AudioContext 생성/resume ★
-  // sleep() 이후에 하면 브라우저가 제스처 컨텍스트를 잃음
-  if (!_ctx || _ctx.state === 'closed') {
-    _ctx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  if (_ctx.state === 'suspended') {
-    await _ctx.resume();
-  }
+  // 클릭 제스처 안에서 즉시 AudioContext 활성화
+  _ctx = new (window.AudioContext || window.webkitAudioContext)();
+  await _ctx.resume();
 
-  // 재생 중이면 정지
-  stopRequested = true;
-  isPlaying = false;
-  await sleep(50);
-  stopRequested = false;
-  isPlaying = true;
+  stopRequested = false; isPlaying = true;
   document.getElementById('playAllBtn').disabled = true;
   document.getElementById('progressWrapper').classList.add('visible');
   document.getElementById('progressFill').style.width = '0%';
 
   for (let i = 0; i < parsedNotes.length; i++) {
     if (stopRequested) break;
-
     const entry  = parsedNotes[i];
     const durSec = getBeatDur(entry);
-    const durMs  = Math.max(200, durSec * 1000);
+    const durMs  = Math.max(150, durSec * 1000);
 
-    document.getElementById('progressFill').style.width = ((i / parsedNotes.length) * 100) + '%';
+    document.getElementById('progressFill').style.width = ((i/parsedNotes.length)*100)+'%';
+    entry.notes.forEach(n => playTone(n, durSec, 0.4));
 
-    // 소리 재생
-    entry.notes.forEach(n => AUDIO.play(n, durSec, 0.4));
-
-    // 칩 하이라이트
-    ['notesGrid-'+i, 'notesGrid2-'+i].forEach(id => {
-      const c = document.getElementById(id);
-      if (c) {
-        c.classList.add('playing');
-        setTimeout(() => c.classList.remove('playing'), durMs);
-      }
+    ['notesGrid-'+i,'notesGrid2-'+i].forEach(id=>{
+      const c=document.getElementById(id);
+      if(c){c.classList.add('playing');setTimeout(()=>c.classList.remove('playing'),durMs);}
     });
-    const c2 = document.getElementById('notesGrid2-'+i);
-    if (c2) c2.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-
+    const c2=document.getElementById('notesGrid2-'+i);
+    if(c2) c2.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
     await sleep(durMs);
   }
-
-  document.getElementById('progressFill').style.width = stopRequested ? '0%' : '100%';
-  setTimeout(() => document.getElementById('progressWrapper').classList.remove('visible'), 700);
-  isPlaying = false;
-  stopRequested = false;
-  document.getElementById('playAllBtn').disabled = false;
+  document.getElementById('progressFill').style.width = stopRequested?'0%':'100%';
+  setTimeout(()=>document.getElementById('progressWrapper').classList.remove('visible'),700);
+  isPlaying=false; stopRequested=false;
+  document.getElementById('playAllBtn').disabled=false;
 }
 function stopAll() {
   stopRequested=true; isPlaying=false;
