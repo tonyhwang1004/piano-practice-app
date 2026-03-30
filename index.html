@@ -696,20 +696,71 @@ uz.ondrop = e=>{e.preventDefault();uz.classList.remove('drag-over');if(e.dataTra
 fi.onchange = e=>{if(e.target.files[0])handleFile(e.target.files[0]);};
 
 function handleFile(file) {
-  uploadedMediaType = file.type||'image/jpeg';
-  const r=new FileReader();
-  r.onload=ev=>{
-    const url=ev.target.result;
-    uploadedImageBase64=url.split(',')[1];
-    document.getElementById('previewImg').src=url;
-    document.getElementById('practiceSheetImg').src=url;
-    document.getElementById('previewSection').classList.add('visible');
-    document.getElementById('analyzeBtn').disabled=false;
-    hideError();
-    document.getElementById('resultSection').style.display='none';
-    document.getElementById('loadingSection').classList.remove('visible');
+  uploadedMediaType = 'image/jpeg'; // 항상 JPEG로 압축 출력
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      // 최대 크기: 긴 쪽 1600px, 4MB 이하 목표
+      const MAX_SIDE = 1600;
+      const MAX_BYTES = 4 * 1024 * 1024; // 4MB
+      let { width: w, height: h } = img;
+
+      // 비율 유지하며 리사이즈
+      if (w > MAX_SIDE || h > MAX_SIDE) {
+        if (w > h) { h = Math.round(h * MAX_SIDE / w); w = MAX_SIDE; }
+        else        { w = Math.round(w * MAX_SIDE / h); h = MAX_SIDE; }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+
+      // 품질을 조절하며 4MB 이하로 맞춤
+      let quality = 0.88;
+      let dataUrl = canvas.toDataURL('image/jpeg', quality);
+      while (dataUrl.length * 0.75 > MAX_BYTES && quality > 0.4) {
+        quality -= 0.08;
+        dataUrl = canvas.toDataURL('image/jpeg', quality);
+      }
+
+      const base64 = dataUrl.split(',')[1];
+      const kb = Math.round(base64.length * 0.75 / 1024);
+
+      uploadedImageBase64 = base64;
+      document.getElementById('previewImg').src = dataUrl;
+      document.getElementById('practiceSheetImg').src = dataUrl;
+      document.getElementById('previewSection').classList.add('visible');
+      document.getElementById('analyzeBtn').disabled = false;
+      hideError();
+      document.getElementById('resultSection').style.display = 'none';
+      document.getElementById('loadingSection').classList.remove('visible');
+
+      // 압축 정보 표시
+      const origKb = Math.round(file.size / 1024);
+      if (origKb > kb + 50) {
+        showCompressionInfo(`📦 이미지 자동 압축: ${origKb}KB → ${kb}KB (품질 ${Math.round(quality*100)}%)`);
+      } else {
+        showCompressionInfo(`📷 이미지 준비 완료: ${kb}KB`);
+      }
+    };
+    img.src = ev.target.result;
   };
-  r.readAsDataURL(file);
+  reader.readAsDataURL(file);
+}
+
+function showCompressionInfo(msg) {
+  let el = document.getElementById('compressionInfo');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'compressionInfo';
+    el.style.cssText = 'font-size:11px;color:var(--text-dim);text-align:center;margin-bottom:8px;padding:5px;';
+    document.getElementById('previewSection').after(el);
+  }
+  el.textContent = msg;
 }
 
 function resetAll() {
