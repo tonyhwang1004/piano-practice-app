@@ -653,9 +653,18 @@ function normBase(b) { return ALIASES[b]||b; }
 // ═══════════════════════════════
 function getAC() {
   if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  if (audioCtx.state==='suspended') audioCtx.resume();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
+
+// 사용자 제스처가 있는 시점에 AudioContext를 미리 활성화
+function unlockAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+// 페이지 첫 터치/클릭 시 잠금 해제
+document.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
+document.addEventListener('mousedown', unlockAudio, { once: true });
 function playTone(noteStr, dur=0.6, vol=0.3) {
   const freq = NOTE_FREQ[noteStr]||0;
   if (!freq) return;
@@ -938,6 +947,22 @@ document.getElementById('tempoSlider').oninput=()=>{
 
 async function playAll() {
   if(isPlaying||!parsedNotes.length) return;
+
+  // ── 모바일/브라우저 AudioContext 잠금 해제 ──
+  // 버튼 클릭(사용자 제스처) 시점에 반드시 resume() 호출
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    await audioCtx.resume();
+  }
+  // 짧은 무음 재생 — iOS Safari 잠금 해제
+  const unlockBuf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+  const unlockSrc = audioCtx.createBufferSource();
+  unlockSrc.buffer = unlockBuf;
+  unlockSrc.connect(audioCtx.destination);
+  unlockSrc.start(0);
+
   stopRequested=false; isPlaying=true;
   document.getElementById('playAllBtn').disabled=true;
   document.getElementById('progressWrapper').classList.add('visible');
