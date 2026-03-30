@@ -2540,13 +2540,6 @@ function switchFileTab(type) {
   });
 }
 
-// 메인 탭 전환 (악보분석 / 재생 / 연습모드)
-function switchTab(tab) {
-  ['analyze','playback','practice'].forEach((t, i) => {
-    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
-    document.querySelectorAll('.tab-btn')[i].classList.toggle('active', t===tab);
-  });
-}
 
 // 드래그앤드롭 — MIDI
 const mz = document.getElementById('midiZone');
@@ -2695,6 +2688,11 @@ function parseMidi(buf) {
         const len = readVarLen(); skip(len);
       } else if (type === 0xC0 || type === 0xD0) { read1(); }
       else if (type === 0xA0 || type === 0xB0 || type === 0xE0) { read1(); read1(); }
+      else if (type === 0xF0 || status === 0xF7) {
+        // SysEx — 0xF7 까지 읽거나 가변 길이로 건너뜀
+        while (pos < trackEnd && data[pos] !== 0xF7) pos++;
+        if (pos < trackEnd) pos++; // 0xF7 건너뜀
+      }
       else { pos++; } // 알 수 없는 이벤트
     }
     pos = trackEnd;
