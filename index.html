@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+=<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -220,6 +220,54 @@ body::before { content:''; position:fixed; inset:0; background: radial-gradient(
 .note-chip.chord-chip.current-target { border-color: var(--blue); background: rgba(90,180,232,0.2); box-shadow: 0 0 0 2px rgba(90,180,232,0.4); }
 .chord-name { font-size: 11px !important; letter-spacing: -0.02em; }
 
+/* ═══ API KEY INPUT ═══ */
+.apikey-card {
+  background: var(--surface);
+  border: 1px solid rgba(245,200,66,0.25);
+  border-radius: 18px; padding: 16px 18px;
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 12px;
+  flex-wrap: wrap;
+}
+.apikey-card .ak-icon { font-size: 20px; flex-shrink:0; }
+.apikey-card .ak-label {
+  font-size: 12px; font-weight: 700; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+.apikey-input-wrap { flex:1; min-width: 180px; position:relative; }
+#apiKeyInput {
+  width: 100%; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 9px 40px 9px 12px;
+  font-size: 13px; color: var(--text); font-family: monospace;
+  outline: none; transition: border-color 0.2s;
+}
+#apiKeyInput:focus { border-color: var(--accent); }
+#apiKeyInput::placeholder { color: var(--text-dim); font-family: 'Noto Sans KR', sans-serif; font-size: 12px; }
+.ak-toggle-vis {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--text-dim); cursor: pointer;
+  font-size: 14px; padding: 2px;
+}
+.ak-save-btn {
+  background: var(--accent); color: #0d0d0f;
+  border: none; border-radius: 10px; padding: 9px 16px;
+  font-size: 12px; font-weight: 900; font-family: inherit;
+  cursor: pointer; white-space: nowrap; transition: all 0.2s; flex-shrink:0;
+}
+.ak-save-btn:hover { background: #ffd84a; }
+.ak-status {
+  width: 100%; font-size: 11px; margin-top: 4px;
+  display: flex; align-items: center; gap: 6px;
+}
+.ak-status.ok { color: var(--green); }
+.ak-status.empty { color: var(--text-dim); }
+.ak-guide {
+  width: 100%; font-size: 11px; color: var(--text-dim); line-height: 1.6; margin-top: 4px;
+}
+.ak-guide a { color: var(--accent); text-decoration: none; }
+
 /* ═══ MIC INPUT ═══ */
 .mic-section { background:var(--surface); border-radius:18px; border:1px solid var(--border); overflow:hidden; margin-bottom:14px; display:none; }
 .mic-section.visible { display:block; }
@@ -290,6 +338,23 @@ body::before { content:''; position:fixed; inset:0; background: radial-gradient(
     <button class="tab-btn active" onclick="switchTab('analyze')">📋 악보 분석</button>
     <button class="tab-btn" onclick="switchTab('playback')">▶ 재생</button>
     <button class="tab-btn" onclick="switchTab('practice')">🎹 연습 모드</button>
+  </div>
+
+  <!-- ═══ API KEY ═══ -->
+  <div class="apikey-card" id="apiKeyCard">
+    <div class="ak-icon">🔑</div>
+    <div class="ak-label">API Key</div>
+    <div class="apikey-input-wrap">
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off" oninput="onApiKeyInput()">
+      <button class="ak-toggle-vis" onclick="toggleKeyVis()" title="보기/숨기기">👁</button>
+    </div>
+    <button class="ak-save-btn" onclick="saveApiKey()">저장</button>
+    <div class="ak-status empty" id="akStatus">⚠️ API 키를 입력해야 악보 분석이 됩니다</div>
+    <div class="ak-guide">
+      Anthropic API 키가 없으시면 →
+      <a href="https://console.anthropic.com/keys" target="_blank">console.anthropic.com</a>
+      에서 무료로 발급받으세요. 키는 이 브라우저에만 저장됩니다.
+    </div>
   </div>
 
   <!-- ═══ TAB: ANALYZE ═══ -->
@@ -501,6 +566,54 @@ let parsedNotes = [];
 let audioCtx = null;
 let isPlaying = false;
 let stopRequested = false;
+let userApiKey = '';
+
+// ── API Key helpers ──
+function loadApiKey() {
+  try {
+    const saved = localStorage.getItem('anthropic_api_key');
+    if (saved) {
+      userApiKey = saved;
+      document.getElementById('apiKeyInput').value = saved;
+      updateApiKeyStatus(true);
+    }
+  } catch(e) {}
+}
+
+function saveApiKey() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  if (!val) { updateApiKeyStatus(false); return; }
+  userApiKey = val;
+  try { localStorage.setItem('anthropic_api_key', val); } catch(e) {}
+  updateApiKeyStatus(true);
+}
+
+function onApiKeyInput() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  userApiKey = val;
+  updateApiKeyStatus(!!val);
+}
+
+function updateApiKeyStatus(hasKey) {
+  const el = document.getElementById('akStatus');
+  if (hasKey) {
+    el.className = 'ak-status ok';
+    el.textContent = '✅ API 키 등록됨 — 악보 분석 준비 완료';
+    document.getElementById('apiKeyCard').style.borderColor = 'rgba(78,203,141,0.3)';
+  } else {
+    el.className = 'ak-status empty';
+    el.textContent = '⚠️ API 키를 입력해야 악보 분석이 됩니다';
+    document.getElementById('apiKeyCard').style.borderColor = 'rgba(245,200,66,0.25)';
+  }
+}
+
+function toggleKeyVis() {
+  const inp = document.getElementById('apiKeyInput');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+// Load saved key on startup
+loadApiKey();
 
 // Practice
 let practiceNotes = [];
@@ -617,6 +730,10 @@ function resetAll() {
 // ═══════════════════════════════
 async function analyzeSheet() {
   if (!uploadedImageBase64) return;
+  if (!userApiKey) {
+    showError('API 키를 먼저 입력해 주세요. 화면 상단 🔑 입력창에 입력 후 저장 버튼을 누르세요.');
+    return;
+  }
   hideError();
   document.getElementById('loadingSection').classList.add('visible');
   document.getElementById('resultSection').style.display='none';
@@ -651,7 +768,13 @@ CRITICAL RULES:
 
   try {
     const res=await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",headers:{"Content-Type":"application/json"},
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "x-api-key": userApiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
       body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:4000,system:sys,
         messages:[{role:"user",content:[
           {type:"image",source:{type:"base64",media_type:uploadedMediaType,data:uploadedImageBase64}},
