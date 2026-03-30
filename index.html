@@ -666,20 +666,25 @@ function unlockAudio() {
 document.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
 document.addEventListener('mousedown', unlockAudio, { once: true });
 function playTone(noteStr, dur=0.6, vol=0.3) {
-  const freq = NOTE_FREQ[noteStr]||0;
+  const freq = NOTE_FREQ[noteStr] || 0;
   if (!freq) return;
+  // NaN / 0 / 음수 방어
+  const safeDur = (isNaN(dur) || dur <= 0) ? 0.6 : dur;
   const ctx = getAC();
+  if (!ctx || ctx.state === 'closed') return;
   const g = ctx.createGain();
   g.connect(ctx.destination);
-  g.gain.setValueAtTime(0,ctx.currentTime);
-  g.gain.linearRampToValueAtTime(vol,ctx.currentTime+0.012);
-  g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+Math.max(0.1,dur*0.93));
-  [1,2,3,4].forEach((h,i)=>{
-    const o=ctx.createOscillator(), hg=ctx.createGain();
-    o.type=i===0?'triangle':'sine'; o.frequency.value=freq*h;
-    hg.gain.value=[0.6,0.2,0.1,0.05][i];
+  g.gain.setValueAtTime(0, ctx.currentTime);
+  g.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + Math.max(0.1, safeDur * 0.93));
+  [1,2,3,4].forEach((h,i) => {
+    const o = ctx.createOscillator(), hg = ctx.createGain();
+    o.type = i === 0 ? 'triangle' : 'sine';
+    o.frequency.value = freq * h;
+    hg.gain.value = [0.6, 0.2, 0.1, 0.05][i];
     o.connect(hg); hg.connect(g);
-    o.start(ctx.currentTime); o.stop(ctx.currentTime+Math.max(0.1,dur*0.93));
+    o.start(ctx.currentTime);
+    o.stop(ctx.currentTime + Math.max(0.1, safeDur * 0.93));
   });
 }
 
@@ -895,8 +900,10 @@ function displayResults(data) {
 }
 
 function getBeatDur(entry) {
-  const bpm=parseInt(document.getElementById('tempoSlider').value);
-  return ((entry.duration||0.5)*60)/bpm;
+  const el = document.getElementById('tempoSlider');
+  const bpm = el ? (parseInt(el.value) || 80) : 80;  // NaN 방어 → 기본값 80
+  const dur = ((entry.duration || 0.5) * 60) / bpm;
+  return isNaN(dur) || dur <= 0 ? 0.5 : dur;  // 이상값 방어
 }
 
 // Play all notes of an entry (chord = simultaneous)
@@ -948,15 +955,13 @@ document.getElementById('tempoSlider').oninput=()=>{
 async function playAll() {
   if(isPlaying||!parsedNotes.length) return;
 
-  // ── 모바일/브라우저 AudioContext 잠금 해제 ──
-  // 버튼 클릭(사용자 제스처) 시점에 반드시 resume() 호출
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  if (audioCtx.state === 'suspended') {
-    await audioCtx.resume();
-  }
-  // 짧은 무음 재생 — iOS Safari 잠금 해제
+  // 재생 탭으로 전환 (tempoSlider DOM 보장)
+  switchTab('playback');
+
+  // AudioContext 잠금 해제 (모바일 필수)
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
+  // iOS Safari 추가 잠금 해제
   const unlockBuf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
   const unlockSrc = audioCtx.createBufferSource();
   unlockSrc.buffer = unlockBuf;
@@ -967,20 +972,30 @@ async function playAll() {
   document.getElementById('playAllBtn').disabled=true;
   document.getElementById('progressWrapper').classList.add('visible');
   document.getElementById('progressFill').style.width='0%';
+
   for(let i=0;i<parsedNotes.length;i++){
     if(stopRequested) break;
-    const entry=parsedNotes[i];
-    const dur=getBeatDur(entry)*1000;
+    const entry = parsedNotes[i];
+    const durSec = getBeatDur(entry);                    // 초 단위 (NaN 방어됨)
+    const durMs  = Math.max(100, durSec * 1000);         // ms, 최소 100ms 보장
+
     document.getElementById('progressFill').style.width=((i/parsedNotes.length)*100)+'%';
     playEntry(entry);
-    ['notesGrid-'+i,'notesGrid2-'+i].forEach(id=>{const c=document.getElementById(id);if(c){c.classList.add('playing');setTimeout(()=>c.classList.remove('playing'),dur);}});
+
+    ['notesGrid-'+i,'notesGrid2-'+i].forEach(id=>{
+      const c=document.getElementById(id);
+      if(c){c.classList.add('playing');setTimeout(()=>c.classList.remove('playing'),durMs);}
+    });
     const c2=document.getElementById('notesGrid2-'+i);
     if(c2) c2.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
-    await sleep(dur);
+
+    await sleep(durMs);
   }
+
   document.getElementById('progressFill').style.width=stopRequested?'0%':'100%';
   setTimeout(()=>document.getElementById('progressWrapper').classList.remove('visible'),700);
-  isPlaying=false; stopRequested=false; document.getElementById('playAllBtn').disabled=false;
+  isPlaying=false; stopRequested=false;
+  document.getElementById('playAllBtn').disabled=false;
 }
 function stopAll() {
   stopRequested=true; isPlaying=false;
