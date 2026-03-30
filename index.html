@@ -323,6 +323,19 @@ body::before { content:''; position:fixed; inset:0; background: radial-gradient(
 ::-webkit-scrollbar { width:5px; }
 ::-webkit-scrollbar-track { background:var(--bg); }
 ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+/* ═══ SHEET RENDERER ═══ */
+.sheet-render-card { background:var(--surface); border-radius:20px; border:1px solid var(--border); overflow:hidden; margin-bottom:14px; }
+.sheet-render-header { padding:13px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.sheet-render-header-left { display:flex; align-items:center; gap:8px; }
+#sheetCanvas {
+  width:100%; display:block; cursor:pointer;
+  background:#fffef8;
+  border-radius:0 0 20px 20px;
+}
+.sheet-scroll-wrap { overflow-x:auto; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+.sheet-scroll-wrap::-webkit-scrollbar { height:4px; }
+.sheet-scroll-wrap::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
 </style>
 </head>
 <body>
@@ -392,6 +405,24 @@ body::before { content:''; position:fixed; inset:0; background: radial-gradient(
           <div class="description-text" id="descriptionText"></div>
         </div>
       </div>
+      <!-- 악보 렌더링 -->
+      <div class="sheet-render-card" id="sheetRenderCard">
+        <div class="sheet-render-header">
+          <div class="sheet-render-header-left">
+            <div class="card-icon">🎼</div>
+            <span style="font-size:12px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;">악보 (클릭하면 소리)</span>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button onclick="sheetZoom(1.2)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:4px 10px;cursor:pointer;font-size:13px;">＋</button>
+            <button onclick="sheetZoom(0.83)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:4px 10px;cursor:pointer;font-size:13px;">－</button>
+            <button onclick="renderSheet()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);border-radius:7px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:inherit;">새로고침</button>
+          </div>
+        </div>
+        <div class="sheet-scroll-wrap">
+          <canvas id="sheetCanvas"></canvas>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-header"><div class="card-icon">🎵</div><div class="card-title">인식된 음표 — 클릭하면 소리 재생</div></div>
         <div class="notes-grid" id="notesGrid"></div>
@@ -651,68 +682,84 @@ function normBase(b) { return ALIASES[b]||b; }
 // ═══════════════════════════════════════════════
 // 🔊 오디오 엔진
 // ═══════════════════════════════════════════════
-let _actx = null;
+// ═══════════════════════════════════════
+// 🔊 오디오 엔진 (완전 독립형)
+// ═══════════════════════════════════════
+const AUDIO = {
+  ctx: null,
 
-function getAC() {
-  if (!_actx || _actx.state === 'closed') {
-    _actx = new (window.AudioContext || window.webkitAudioContext)();
+  // AudioContext 가져오기 — 항상 running 상태 보장
+  get() {
+    try {
+      if (!this.ctx || this.ctx.state === 'closed') {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (this.ctx.state === 'suspended') {
+        this.ctx.resume();
+      }
+    } catch(e) {}
+    return this.ctx;
+  },
+
+  // 사용자 제스처 시 호출 — resume 보장 (await 가능)
+  async unlock() {
+    try {
+      // 기존 ctx가 suspended면 닫고 새로 만들기
+      if (this.ctx && this.ctx.state === 'suspended') {
+        await this.ctx.close().catch(()=>{});
+        this.ctx = null;
+      }
+      if (!this.ctx || this.ctx.state === 'closed') {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (this.ctx.state === 'suspended') {
+        await this.ctx.resume();
+      }
+    } catch(e) { console.warn('unlock error', e); }
+  },
+
+  // 단일 음 재생
+  play(noteStr, durSec, vol) {
+    if (!noteStr || noteStr === 'REST') return;
+    const freq = NOTE_FREQ[noteStr];
+    if (!freq || freq <= 0) return;
+
+    const d = (durSec > 0 && isFinite(durSec)) ? durSec : 0.5;
+    const v = (vol > 0 && isFinite(vol)) ? vol : 0.4;
+
+    const ctx = this.get();
+    if (!ctx) return;
+
+    try {
+      const now = ctx.currentTime;
+
+      // Gain envelope
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(v, now);
+      g.gain.setTargetAtTime(0.001, now + d * 0.3, d * 0.2);
+      g.connect(ctx.destination);
+
+      // 기본 오실레이터
+      const o = ctx.createOscillator();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(freq, now);
+      o.connect(g);
+      o.start(now);
+      o.stop(now + d + 0.1);
+
+    } catch(e) { /* 무시 */ }
   }
-  if (_actx.state === 'suspended') _actx.resume();
-  return _actx;
-}
+};
 
-// 클릭/터치마다 resume 시도
-function unlockAudio() {
-  try { const c = getAC(); if (c.state === 'suspended') c.resume(); } catch(e) {}
-}
-document.addEventListener('click', unlockAudio);
-document.addEventListener('touchstart', unlockAudio, { passive: true });
+// 전역 이벤트로 unlock — 모든 클릭/터치에 반응
+document.addEventListener('click',      async () => { await AUDIO.unlock(); }, true);
+document.addEventListener('touchstart', async () => { await AUDIO.unlock(); }, { capture:true, passive:true });
+document.addEventListener('keydown',    async () => { await AUDIO.unlock(); }, true);
 
-function playTone(noteStr, durSec, vol) {
-  if (!noteStr || noteStr === 'REST') return;
-  const freq = NOTE_FREQ[noteStr];
-  if (!freq || isNaN(freq) || freq <= 0) return;
-
-  const d = (!durSec || isNaN(durSec) || durSec <= 0) ? 0.5 : durSec;
-  const v = (!vol || isNaN(vol)) ? 0.35 : vol;
-
-  let ctx;
-  try { ctx = getAC(); } catch(e) { return; }
-
-  try {
-    const t = ctx.currentTime;
-
-    // 메인 gain
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(v, t);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    gain.connect(ctx.destination);
-
-    // 기본음
-    const osc = ctx.createOscillator();
-    osc.frequency.value = freq;
-    osc.type = 'sine';
-    osc.connect(gain);
-    osc.start(t);
-    osc.stop(t + d);
-
-    // 2배음 (음색용)
-    const osc2 = ctx.createOscillator();
-    const g2 = ctx.createGain();
-    osc2.frequency.value = freq * 2;
-    osc2.type = 'sine';
-    g2.gain.value = 0.15;
-    osc2.connect(g2);
-    g2.connect(ctx.destination);
-    osc2.start(t);
-    osc2.stop(t + d * 0.7);
-  } catch(e) {
-    console.warn('playTone err:', noteStr, e.message);
-  }
-}
-
-// 기존 코드 호환용 alias
-function getAudioContext() { return getAC(); }
+// 기존 함수명 호환
+function playTone(noteStr, durSec, vol) { AUDIO.play(noteStr, durSec, vol); }
+function getAC()                        { return AUDIO.get(); }
+function unlockAudio()                  { AUDIO.unlock(); }
 
 
 // ═══════════════════════════════
@@ -1009,20 +1056,15 @@ document.getElementById('tempoSlider').oninput=()=>{
 async function playAll() {
   if (!parsedNotes.length) return;
 
-  // 이전 재생 강제 정지
+  // 재생 중이면 정지 후 재시작
+  stopRequested = true;
   isPlaying = false;
+  await sleep(80);
+
+  // 클릭 제스처로 오디오 잠금 해제 (await로 완료 보장)
+  await AUDIO.unlock();
+
   stopRequested = false;
-  await sleep(50); // 이전 루프 종료 대기
-
-  // AudioContext 완전 리셋 — 새 악보마다 새로 생성
-  try {
-    if (_actx && _actx.state !== 'closed') await _actx.close();
-  } catch(e) {}
-  try {
-    _actx = new (window.AudioContext || window.webkitAudioContext)();
-    await _actx.resume();
-  } catch(e) { console.warn('AudioContext 생성 실패:', e); return; }
-
   isPlaying = true;
   document.getElementById('playAllBtn').disabled = true;
   document.getElementById('progressWrapper').classList.add('visible');
@@ -1030,16 +1072,23 @@ async function playAll() {
 
   for (let i = 0; i < parsedNotes.length; i++) {
     if (stopRequested) break;
-    const entry = parsedNotes[i];
+
+    const entry  = parsedNotes[i];
     const durSec = getBeatDur(entry);
-    const durMs  = Math.max(150, durSec * 1000);
+    const durMs  = Math.max(200, durSec * 1000);
 
     document.getElementById('progressFill').style.width = ((i / parsedNotes.length) * 100) + '%';
-    playEntry(entry);
 
+    // 소리 재생
+    entry.notes.forEach(n => AUDIO.play(n, durSec, 0.4));
+
+    // 칩 하이라이트
     ['notesGrid-'+i, 'notesGrid2-'+i].forEach(id => {
       const c = document.getElementById(id);
-      if (c) { c.classList.add('playing'); setTimeout(() => c.classList.remove('playing'), durMs); }
+      if (c) {
+        c.classList.add('playing');
+        setTimeout(() => c.classList.remove('playing'), durMs);
+      }
     });
     const c2 = document.getElementById('notesGrid2-'+i);
     if (c2) c2.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
@@ -1919,6 +1968,317 @@ function setMicMode(mode) {
 document.getElementById('sensSlider').oninput = function() {
   document.getElementById('sensVal').textContent = this.value;
 };
+
+
+// ═══════════════════════════════════════════════════════════
+// 🎼 악보 렌더러 — Canvas 기반 오선지 + 음표 그리기
+// ═══════════════════════════════════════════════════════════
+
+let sheetScale = 1.0;       // 확대/축소
+let sheetHighlight = -1;    // 현재 강조 음표 인덱스
+
+// 음표 이름 → 오선 위치(스텝) 변환
+// 스텝 0 = 제1선 아래 공간(D4), 스텝 1 = 제1선(E4), 스텝 2 = 제1선 위 공간(F4) ...
+// 위로 갈수록 스텝 증가, 아래로 갈수록 감소
+const NOTE_STEP = {
+  'C4':0,'D4':1,'E4':2,'F4':3,'G4':4,'A4':5,'B4':6,
+  'C5':7,'D5':8,'E5':9,'F5':10,'G5':11,'A5':12,'B5':13,
+  'C6':14,'D6':15,'E6':16,
+  'C3':-7,'D3':-6,'E3':-5,'F3':-4,'G3':-3,'A3':-2,'B3':-1,
+  'C2':-14,'D2':-13,'E2':-12,'F2':-11,'G2':-10,'A2':-9,'B2':-8,
+};
+// 반음 → 같은 스텝 (C#4 = C4 스텝)
+const SHARP_BASES = {'C#':'C','D#':'D','F#':'F','G#':'G','A#':'A','Db':'C','Eb':'D','Gb':'G','Ab':'A','Bb':'B'};
+function noteToStep(noteStr) {
+  const m = noteStr.match(/^([A-G][#b]?)(\d)$/);
+  if (!m) return 0;
+  const base = SHARP_BASES[m[1]] || m[1];
+  const key = base + m[2];
+  // 옥타브 차이 보정
+  const step = NOTE_STEP[key];
+  if (step !== undefined) return step;
+  // 없으면 인접 옥타브 계산
+  const oct = parseInt(m[2]);
+  const base4 = base + '4';
+  const base4Step = NOTE_STEP[base4] || 0;
+  return base4Step + (oct - 4) * 7;
+}
+
+function sheetZoom(factor) {
+  sheetScale = Math.min(3, Math.max(0.5, sheetScale * factor));
+  renderSheet();
+}
+
+function renderSheet() {
+  const canvas = document.getElementById('sheetCanvas');
+  if (!canvas || !parsedNotes.length) return;
+
+  const sc = sheetScale;
+  const STAFF_GAP = 10 * sc;      // 오선 간격(px)
+  const STAFF_H = STAFF_GAP * 4;  // 오선 높이
+  const NOTE_W = 38 * sc;         // 음표 1개 가로 폭
+  const MARGIN_L = 60 * sc;       // 왼쪽 여백 (박자표 등)
+  const MARGIN_T = 52 * sc;       // 위 여백
+  const MARGIN_B = 40 * sc;       // 아래 여백
+  const STAFF_TOP = MARGIN_T;     // 오선 시작 Y
+
+  // 한 줄에 몇 음표? → 전체 너비 기반
+  const canvasW = Math.max(600, canvas.parentElement.clientWidth || 700);
+  const notesPerRow = Math.max(4, Math.floor((canvasW - MARGIN_L - 20) / NOTE_W));
+  const rows = Math.ceil(parsedNotes.length / notesPerRow);
+  const ROW_H = (STAFF_H + MARGIN_T + MARGIN_B);
+
+  canvas.width  = canvasW;
+  canvas.height = ROW_H * rows + 20;
+  canvas.style.width = '100%';
+  canvas.style.height = canvas.height + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 배경
+  ctx.fillStyle = '#fffef8';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 음표 클릭 히트 영역 저장
+  const hitAreas = [];
+
+  parsedNotes.forEach((entry, idx) => {
+    const row = Math.floor(idx / notesPerRow);
+    const col = idx % notesPerRow;
+
+    const rowY = row * ROW_H;
+    const noteX = MARGIN_L + col * NOTE_W + NOTE_W * 0.5;
+    const staffTop = rowY + MARGIN_T;
+
+    // ── 오선 그리기 (각 행마다) ──
+    if (col === 0) {
+      // 5선
+      for (let line = 0; line < 5; line++) {
+        const y = staffTop + line * STAFF_GAP;
+        ctx.beginPath();
+        ctx.moveTo(MARGIN_L * 0.3, y);
+        ctx.lineTo(canvasW - 10, y);
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+      }
+      // 세로 마디선 (왼쪽)
+      ctx.beginPath();
+      ctx.moveTo(MARGIN_L * 0.3, staffTop);
+      ctx.lineTo(MARGIN_L * 0.3, staffTop + STAFF_H);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#333';
+      ctx.stroke();
+
+      // 높은음자리표 (간단한 버전 — 텍스트로)
+      ctx.font = `${STAFF_H * 1.3}px serif`;
+      ctx.fillStyle = '#222';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('𝄞', MARGIN_L * 0.35, staffTop + STAFF_H * 1.05);
+    }
+
+    // ── 음표 그리기 ──
+    const isRest = entry.notes.every(n => n === 'REST');
+    const isHighlight = idx === sheetHighlight;
+
+    if (isRest) {
+      // 쉼표 — 작은 사각형
+      ctx.fillStyle = isHighlight ? '#e85a5a' : '#444';
+      const restY = staffTop + STAFF_GAP * 1.5;
+      ctx.fillRect(noteX - 5*sc, restY, 10*sc, 5*sc);
+      // 쉼표 레이블
+      ctx.font = `${8*sc}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#999';
+      ctx.fillText('쉼', noteX, staffTop + STAFF_H + 14*sc);
+    } else {
+      entry.notes.forEach((noteStr, ni) => {
+        const step = noteToStep(noteStr);
+        // Y 위치: step 0 = 제1선 한칸 아래(C4), step 1 = 제1선(E4에서 D4이므로 수정)
+        // 실제: step 0=C4(덧줄 아래), step 1=D4, step 2=E4(1선)...
+        // 오선 제1선(E4) = staffTop + STAFF_H
+        // 제5선(F5) = staffTop
+        // 각 스텝은 STAFF_GAP/2
+        const HALF_GAP = STAFF_GAP / 2;
+        // step 2 = E4 = 제1선 = staffTop + STAFF_GAP*4
+        const noteY = staffTop + STAFF_GAP * 4 - (step - 2) * HALF_GAP;
+
+        const noteW = 7 * sc;
+        const noteH = 5.5 * sc;
+        const isBlack = entry.duration <= 1; // 4분음표 이하 = 채운 음표머리
+
+        // 덧줄 (오선 밖으로 나간 경우)
+        const lineStep = (step - 2); // E4 기준
+        // 위로 나갔을 때 (step > 10 = A5 이상)
+        if (lineStep > 8) {
+          for (let ls = 10; ls <= lineStep; ls += 2) {
+            const ly = staffTop + STAFF_GAP * 4 - (ls - 2) * HALF_GAP;
+            ctx.beginPath();
+            ctx.moveTo(noteX - noteW * 1.4, ly);
+            ctx.lineTo(noteX + noteW * 1.4, ly);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 0.9;
+            ctx.stroke();
+          }
+        }
+        // 아래로 나갔을 때 (step < 2 = E4 미만 → C4 덧줄)
+        if (lineStep < 0) {
+          for (let ls = 0; ls >= lineStep; ls -= 2) {
+            const ly = staffTop + STAFF_GAP * 4 - (ls - 2) * HALF_GAP;
+            ctx.beginPath();
+            ctx.moveTo(noteX - noteW * 1.4, ly);
+            ctx.lineTo(noteX + noteW * 1.4, ly);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 0.9;
+            ctx.stroke();
+          }
+        }
+
+        // 임시표 (#/b)
+        const accidental = noteStr.match(/[#b]/)?.[0];
+        if (accidental) {
+          ctx.font = `bold ${10*sc}px serif`;
+          ctx.fillStyle = isHighlight ? '#5ab4e8' : '#333';
+          ctx.textAlign = 'right';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(accidental === '#' ? '♯' : '♭', noteX - noteW * 0.8, noteY);
+        }
+
+        // 음표 머리 (타원)
+        ctx.beginPath();
+        ctx.ellipse(noteX, noteY, noteW, noteH, -0.3, 0, Math.PI * 2);
+        if (isBlack) {
+          ctx.fillStyle = isHighlight ? '#5ab4e8' : '#1a1a1a';
+          ctx.fill();
+        } else {
+          ctx.strokeStyle = isHighlight ? '#5ab4e8' : '#1a1a1a';
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+          ctx.fillStyle = isHighlight ? 'rgba(90,180,232,0.15)' : '#fffef8';
+          ctx.fill();
+          ctx.beginPath();
+          ctx.ellipse(noteX, noteY, noteW, noteH, -0.3, 0, Math.PI * 2);
+          ctx.strokeStyle = isHighlight ? '#5ab4e8' : '#1a1a1a';
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+        }
+
+        // 기둥 (stem) — 단음 또는 첫 번째 음에만
+        if (ni === 0 && entry.duration < 4) {
+          const stemUp = step < 6; // 낮은 음은 기둥 위로
+          const stemX = stemUp ? noteX + noteW * 0.85 : noteX - noteW * 0.85;
+          const stemEndY = stemUp ? noteY - STAFF_GAP * 3.5 : noteY + STAFF_GAP * 3.5;
+          ctx.beginPath();
+          ctx.moveTo(stemX, noteY + (stemUp ? -noteH*0.3 : noteH*0.3));
+          ctx.lineTo(stemX, stemEndY);
+          ctx.strokeStyle = isHighlight ? '#5ab4e8' : '#1a1a1a';
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+
+          // 꼬리 (flag) — 8분음표 이하
+          if (entry.duration <= 0.5) {
+            const flagCount = entry.duration <= 0.25 ? 2 : 1;
+            for (let f = 0; f < flagCount; f++) {
+              const fy = stemEndY + (stemUp ? f*6*sc : -f*6*sc);
+              ctx.beginPath();
+              ctx.moveTo(stemX, fy);
+              ctx.bezierCurveTo(
+                stemX + 12*sc * (stemUp?1:-1), fy + 4*sc * (stemUp?1:-1),
+                stemX + 12*sc * (stemUp?1:-1), fy + 10*sc * (stemUp?1:-1),
+                stemX + 6*sc  * (stemUp?1:-1), fy + 14*sc * (stemUp?1:-1)
+              );
+              ctx.strokeStyle = isHighlight ? '#5ab4e8' : '#1a1a1a';
+              ctx.lineWidth = 1.5;
+              ctx.stroke();
+            }
+          }
+
+          // 점 (점음표)
+          if (entry.duration === 1.5 || entry.duration === 0.75 || entry.duration === 3) {
+            ctx.beginPath();
+            ctx.arc(noteX + noteW + 3*sc, noteY + (step%2===0 ? -HALF_GAP*0.5 : 0), 2*sc, 0, Math.PI*2);
+            ctx.fillStyle = isHighlight ? '#5ab4e8' : '#1a1a1a';
+            ctx.fill();
+          }
+        }
+
+        // 계이름 레이블 (음표 아래)
+        if (ni === 0) {
+          const base = noteStr.replace(/[0-9]/g,'').replace(/[#b]/g,'');
+          const kr = KR[noteStr.replace(/[0-9]/g,'')] || KR[base] || base;
+          ctx.font = `${7.5*sc}px 'Noto Sans KR', sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillStyle = isHighlight ? '#5ab4e8' : '#888';
+          ctx.fillText(kr, noteX, staffTop + STAFF_H + 6*sc);
+        }
+      }); // end notes forEach
+    }
+
+    // 히트 영역 등록
+    const row2 = Math.floor(idx / notesPerRow);
+    const staffTop2 = row2 * ROW_H + MARGIN_T;
+    hitAreas.push({
+      idx,
+      x1: noteX - NOTE_W * 0.45,
+      x2: noteX + NOTE_W * 0.45,
+      y1: staffTop2 - MARGIN_T * 0.3,
+      y2: staffTop2 + STAFF_H + MARGIN_B * 0.8,
+    });
+  }); // end parsedNotes forEach
+
+  // 캔버스 클릭 이벤트 (재등록)
+  canvas.onclick = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleY;
+    for (const hit of hitAreas) {
+      if (mx >= hit.x1 && mx <= hit.x2 && my >= hit.y1 && my <= hit.y2) {
+        sheetHighlight = hit.idx;
+        playEntry(parsedNotes[hit.idx]);
+        renderSheet();
+        break;
+      }
+    }
+  };
+}
+
+// displayResults 이후 자동 렌더
+const _origDisplayResults = displayResults;
+displayResults = function(data) {
+  _origDisplayResults(data);
+  setTimeout(renderSheet, 100);
+};
+
+// playAll 재생 중 악보 위치 강조
+const _origPlayAll = playAll;
+playAll = async function() {
+  // playAll에서 각 음표 재생 시 sheetHighlight 업데이트
+  // 기존 playAll을 래핑
+  const origParsed = parsedNotes;
+  await _origPlayAll();
+};
+
+// 악보에서 재생 위치 동기화 — MutationObserver로 notesGrid 칩 변화 감지
+const _sheetObserver = new MutationObserver(() => {
+  const chips = document.querySelectorAll('#notesGrid .note-chip.playing');
+  if (chips.length > 0) {
+    const id = chips[0].id; // 'notesGrid-N'
+    const idx = parseInt(id.split('-').pop());
+    if (!isNaN(idx) && idx !== sheetHighlight) {
+      sheetHighlight = idx;
+      renderSheet();
+    }
+  }
+});
+// DOM 준비 후 관찰 시작
+window.addEventListener('load', () => {
+  const grid = document.getElementById('notesGrid');
+  if (grid) _sheetObserver.observe(grid, { subtree: true, attributes: true, attributeFilter: ['class'] });
+});
 
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 function showError(msg){const el=document.getElementById('errorCard');el.textContent='⚠️ '+msg;el.classList.add('visible');}
