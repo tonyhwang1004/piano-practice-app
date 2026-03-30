@@ -1049,14 +1049,19 @@ document.getElementById('tempoSlider').oninput=()=>{
 async function playAll() {
   if (!parsedNotes.length) return;
 
-  // 재생 중이면 정지 후 재시작
+  // ★ 사용자 제스처(클릭) 시점에 즉시 AudioContext 생성/resume ★
+  // sleep() 이후에 하면 브라우저가 제스처 컨텍스트를 잃음
+  if (!_ctx || _ctx.state === 'closed') {
+    _ctx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (_ctx.state === 'suspended') {
+    await _ctx.resume();
+  }
+
+  // 재생 중이면 정지
   stopRequested = true;
   isPlaying = false;
-  await sleep(80);
-
-  // 클릭 제스처로 오디오 잠금 해제 (await로 완료 보장)
-  await AUDIO.unlock();
-
+  await sleep(50);
   stopRequested = false;
   isPlaying = true;
   document.getElementById('playAllBtn').disabled = true;
